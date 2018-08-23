@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "sourceMap": false,
+    "sourceMap": true,
     "target": "es5",
     "jsx": "react",
     "module": "commonjs",

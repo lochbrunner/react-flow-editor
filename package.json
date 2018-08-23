@@ -1,7 +1,7 @@
 {
     "name": "react-flow-editor",
     "version": "0.0.1",
-    "description": "React component which enables creating flow graph editors with ease",
+    "description": "React component which enables creating flow editors with ease",
     "author": {
         "name": "Matthias Lochbrunner",
         "email": "matthias_lochbrunner@web.de"
