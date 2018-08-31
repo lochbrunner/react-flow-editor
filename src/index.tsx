@@ -1,5 +1,5 @@
 import * as React from 'react';
-
+import * as _ from 'lodash';
 
 export interface Size {
     width: number,
@@ -9,6 +9,8 @@ export interface Size {
 export type BaseConnection = {
     name: string;
     id?: string;
+    payload?: any;
+    renderer?: (connection: BaseConnection) => JSX.Element;
 };
 
 export type BaseInput = BaseConnection & {};
@@ -27,6 +29,7 @@ export interface Node {
 export interface Config {
     resolver: (payload: any) => JSX.Element;
     // connectionValidator?: (output: Node, input: Node) => boolean;
+    onChanged?: (node: Node) => void;
     connectionType?: 'bezier' | 'linear';
 }
 
@@ -39,8 +42,10 @@ type vector2d = { x: number, y: number };
 
 type NodeState = { pos: vector2d, size: vector2d }
 
+
 type State = {
     nodesState: Map<string, NodeState>;
+    connectionState: Map<string, NodeState>;
 }
 
 class Rect {
@@ -58,6 +63,10 @@ class Rect {
     get right() { return this.pos.x + this.size.x; }
     get top() { return this.pos.y; }
     get bottom() { return this.pos.y + this.size.y; }
+
+    static compare(a: Rect, b: Rect): boolean {
+        return a.size.x === b.size.x && a.size.y === b.size.y && a.pos.x === b.pos.x && a.pos.y === b.pos.y;
+    }
 }
 
 export class Editor extends React.Component<Props, State> {
@@ -65,14 +74,18 @@ export class Editor extends React.Component<Props, State> {
     private mouseDownPos?: {
         lastPos: vector2d, nodeId: string
     };
+    private endpointCache: Map<string, Rect>;
+
     constructor(props: Props) {
         super(props);
-        this.state = { nodesState: this.calcNodesState() };
+        this.endpointCache = new Map<string, Rect>();
+        this.state = this.initialState();
     }
 
-    private calcNodesState(): Map<string, NodeState> {
+    private initialState() {
         const { props } = this;
         const nodesState = new Map<string, NodeState>();
+        const connectionState = new Map<string, NodeState>();
         const margin = { x: 100, y: 100 };
         const usedPlace: Rect[] = [];
         for (let node of props.nodes) {
@@ -86,8 +99,24 @@ export class Editor extends React.Component<Props, State> {
             const size = { x: 100, y: 100 };    // TODO: get size out of ref 
             nodesState.set(node.id, { pos, size });
             usedPlace.push(new Rect(pos, size));
+
+            let i = 0;
+            for (let input of node.inputs) {
+                const inputPos = { x: pos.x, y: pos.y + 100 + i * 100 };
+                const inputSize = { x: 12, y: 12 };
+                const key = `${node.id}_${i}_in`;
+                connectionState.set(key, { pos: inputPos, size: inputSize });
+                ++i;
+            }
+            for (let output of node.outputs) {
+                const outputPos = { x: pos.x + size.y, y: pos.y + 100 + i * 100 };
+                const outputSize = { x: 12, y: 12 };
+                const key = `${node.id}_${i}_out`;
+                connectionState.set(key, { pos: outputPos, size: outputSize });
+                ++i;
+            }
         }
-        return nodesState;
+        return { nodesState, connectionState };
     }
 
     private connection(outputId: string, inputId: string) {
@@ -96,14 +125,16 @@ export class Editor extends React.Component<Props, State> {
         const key = `${outputId}_${inputId}`;
         const stroke = '#ccc';
         const width = 2;
-        const output = nodesState.get(outputId);
-        const input = nodesState.get(inputId);
-        const sign = Math.sign(input.pos.x - output.pos.x);
-        const dy = 20;
-        const a0 = { x: output.pos.x + output.size.x, y: output.pos.y + dy };
-        const a1 = { x: a0.x + sign * 100, y: a0.y };
-        const a3 = { x: input.pos.x, y: input.pos.y + dy };
-        const a2 = { x: input.pos.x - sign * 100, y: a3.y };
+        // const output = nodesState.get(outputId.substring(0, outputId.indexOf('_')));
+        // const input = nodesState.get(inputId.substring(0, inputId.indexOf('_')));
+        // const dy = 40;
+        const output = this.state.connectionState.get(outputId);
+        const input = this.state.connectionState.get(inputId);
+        const a0 = { x: output.pos.x + output.size.x * 0.5, y: output.pos.y + output.size.y * 0.5 };
+        const a3 = { x: input.pos.x + input.size.x * 0.5, y: input.pos.y + input.size.y * 0.5 };
+        const dx = Math.max(Math.abs(a0.x - a3.x) / 1.5, 100);
+        const a1 = { x: a0.x - dx, y: a0.y };
+        const a2 = { x: a3.x + dx, y: a3.y };
 
         if (config.connectionType === 'bezier') {
             return <path key={key} d={`M${a0.x} ${a0.y} C ${a1.x} ${a1.y}, ${a2.x} ${a2.y}, ${a3.x} ${a3.y}`} stroke={stroke} strokeWidth={width} fill="transparent" />;
@@ -132,6 +163,30 @@ export class Editor extends React.Component<Props, State> {
         this.mouseDownPos.lastPos = { x: e.screenX, y: e.screenY };
     }
 
+    private setConnectionEndpoint(nodeId: string, endpointId: string, element: Element) {
+        if (!element) return;
+        // Only save relative position
+        const parentPos = this.state.nodesState.get(nodeId).pos;
+        const key = endpointId;
+        const cached = this.endpointCache.get(key);
+        const newDomRect: DOMRect = element.getBoundingClientRect() as DOMRect;
+        const newRect = new Rect({ x: newDomRect.x, y: newDomRect.y }, { x: newDomRect.width, y: newDomRect.height });
+        if (cached === undefined || !Rect.compare(newRect, cached)) {
+            // console.log(`setConnectionEndpoint(${id})`)
+            // console.log(newRect);
+            // console.log(cached);
+            this.endpointCache.set(key, newRect);
+            setImmediate(() =>
+                this.setState((state, props) => {
+                    // state.connectionState.set(key, { pos: newRect.pos, size: newRect.size });
+                    state.connectionState.get(key).pos = newRect.pos;
+                    return state;
+                }));
+        }
+
+    };
+
+
     render() {
 
         const { props, state } = this;
@@ -154,6 +209,7 @@ export class Editor extends React.Component<Props, State> {
             cursor: 'grab',
             backgroundColor: '#f7f7f7',
             userSelect: 'none',
+            MozUserSelect: 'none',
             borderRadius: '10px 10px 0 0'
         };
 
@@ -171,6 +227,50 @@ export class Editor extends React.Component<Props, State> {
             width: '100%',
         };
 
+        const dot = (parentId: string, key: string, type: 'input' | 'output') => {
+            const dotStyle = {
+                height: '10px',
+                width: '10px',
+                borderRadius: '50%',
+                display: 'inline-block',
+                marginTop: '3px'
+            };
+            const inputStyle = {
+                ...dotStyle,
+                backgroundColor: '#e22',
+                border: '1px solid #f55',
+                float: 'right',
+                marginRight: '-16px',
+            };
+            const outputStyle = {
+                ...dotStyle,
+                backgroundColor: '#2e2',
+                border: '1px solid #5f5',
+                float: 'left',
+                marginLeft: '-16px',
+            };
+            return <div ref={this.setConnectionEndpoint.bind(this, parentId, key)} style={(type === 'input' ? inputStyle : outputStyle as any)} />
+        };
+
+        const properties = (node: Node) => {
+            const properties = [];
+            properties.push(...node.inputs.map((input, i) => {
+                const key = `${node.id}_${i}_in`;
+                return <div key={key}>
+                    {input.name}
+                    {dot(node.id, key, 'input')}
+                </div>
+            }));
+            properties.push(...node.outputs.map((output, i) => {
+                const key = `${node.id}_${i + node.inputs.length}_out`;
+                return <div key={key}>
+                    {output.renderer ? output.renderer(output) : output.name}
+                    {dot(node.id, key, 'output')}
+                </div>
+            }));
+            return properties;
+        };
+
         const nodes = props.nodes.map(node =>
             <div key={node.id} style={nodeStyle(state.nodesState.get(node.id).pos) as any} className="node">
                 <div onMouseDown={this.dragStarted.bind(this, node.id)} className="node-header" style={nodeHeaderStyle as any}>
@@ -178,15 +278,35 @@ export class Editor extends React.Component<Props, State> {
                 </div>
                 <div className="node-body" style={nodeBodyStyle}>
                     {props.config.resolver(node.payload)}
+                    {properties(node)}
                 </div>
             </div>);
 
-        const connections: { in: string, out: string }[] = props.nodes.reduce((p, s) => [...p, ...s.outputs.map(o => ({ in: s.id, out: o.id }))], []);
+        // const connections: { in: string, out: string }[] = props.nodes.reduce((p, input, inputIndex) => [...p, ...input.outputs.map((output, outputIndex) => ({ in: `${input.id}_${inputIndex}_out`, out: `${output.id}_${outputIndex}_in` }))], []);
+        // const connections: { in: string, out: string }[] = props.nodes.reduce((prev, input, inputIndex) => [...prev, ...input.outputs.map(o => props.nodes.filter(n => n.id === o.id)[0].inputs).map(inp => inp.)], []);
+        const connections: { out: string, in: string }[] = [];
+        for (let node of props.nodes) {
+            let i = 0;
+            for (let input of node.inputs) {
+                const inputId = `${node.id}_${i}_in`;
+                const opp = props.nodes.filter(o => o.id === input.id);
+                let j = 0;
+                for (let output of opp[0].outputs) {
+                    if (output.id === node.id) {
+                        const outputId = `${opp[0].id}_${j + opp[0].inputs.length}_out`;
+                        connections.push({ in: inputId, out: outputId });
+                    }
+                    ++j;
+                }
+                ++i;
+            }
+        }
+
         const connectionsLines = connections.map(conn => this.connection(conn.out, conn.in));
 
         return (
             <div onMouseLeave={this.dragEnded.bind(this)} onMouseMove={this.onDrag.bind(this)} onMouseUp={this.dragEnded.bind(this)} className="editor" >
-                <svg style={svgStyle as any} width="auto" height="auto" xmlns="http://www.w3.org/2000/svg">
+                <svg style={svgStyle as any} xmlns="http://www.w3.org/2000/svg">
                     {connectionsLines}
                 </svg>
                 {nodes}
@@ -194,3 +314,4 @@ export class Editor extends React.Component<Props, State> {
         );
     }
 }
+

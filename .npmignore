@@ -1,0 +1,8 @@
+.vscode
+src
+docs
+example
+scripts
+tsconfig.json
+tslint.json
+package-lock.json

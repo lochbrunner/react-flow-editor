@@ -4,4 +4,4 @@
 
 ## Usage
 
-See [example](./example/README.md) for usage.
+See [example](./example/) for usage.

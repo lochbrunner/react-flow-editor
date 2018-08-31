@@ -14,8 +14,14 @@ const nodes: Node[] = [
     {
         id: 'Node 2',
         payload: { h1: 'world' },
-        inputs: [],
+        inputs: [{ id: 'Node 3', name: 'input 1' }],
         outputs: [{ id: 'Node 1', name: 'output 1' }]
+    },
+    {
+        id: 'Node 3',
+        payload: { h1: '!' },
+        inputs: [],
+        outputs: [{ id: 'Node 2', name: 'output 1' }]
     }
 ];
 
@@ -28,7 +34,8 @@ function resolver(payload: any): JSX.Element {
 
 const config: Config = {
     resolver,
-    connectionType: 'bezier'
+    connectionType: 'bezier',
+    onChanged: node => { }
 };
 
 ReactDOM.render(
