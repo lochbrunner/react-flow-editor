@@ -38,14 +38,34 @@ export interface Props {
     nodes: Node[];
 }
 
-type vector2d = { x: number, y: number };
+class vector2d {
+    x: number;
+    y: number;
+    static add(a: vector2d, b: vector2d): vector2d {
+        return { x: a.x + b.x, y: a.y + b.y };
+    }
 
-type NodeState = { pos: vector2d, size: vector2d }
+    static compare(a: vector2d, b: vector2d) {
+        return a.x === b.x && a.y === b.y;
+    }
+};
+
+type NodeState = { pos: vector2d, size: vector2d, offset?: vector2d }
 
 
 type State = {
     nodesState: Map<string, NodeState>;
-    connectionState: Map<string, NodeState>;
+    connectionState: Map<string, vector2d>;
+}
+
+class Connection {
+    nodeId: string;
+    connectionId: number;
+    kind: 'input' | 'output';
+
+    static computeId(nodeId: Connection['nodeId'], connectionId: Connection['connectionId'], kind: Connection['kind']) {
+        return `${nodeId}_${connectionId}_${kind}`;
+    }
 }
 
 class Rect {
@@ -74,18 +94,18 @@ export class Editor extends React.Component<Props, State> {
     private mouseDownPos?: {
         lastPos: vector2d, nodeId: string
     };
-    private endpointCache: Map<string, Rect>;
+    private endpointCache: Map<string, vector2d>;
 
     constructor(props: Props) {
         super(props);
-        this.endpointCache = new Map<string, Rect>();
+        this.endpointCache = new Map<string, vector2d>();
         this.state = this.initialState();
     }
 
     private initialState() {
         const { props } = this;
         const nodesState = new Map<string, NodeState>();
-        const connectionState = new Map<string, NodeState>();
+        const connectionState = new Map<string, vector2d>();
         const margin = { x: 100, y: 100 };
         const usedPlace: Rect[] = [];
         for (let node of props.nodes) {
@@ -103,35 +123,36 @@ export class Editor extends React.Component<Props, State> {
             let i = 0;
             for (let input of node.inputs) {
                 const inputPos = { x: pos.x, y: pos.y + 100 + i * 100 };
-                const inputSize = { x: 12, y: 12 };
-                const key = `${node.id}_${i}_in`;
-                connectionState.set(key, { pos: inputPos, size: inputSize });
+                const key = Connection.computeId(node.id, i, 'input');
+                connectionState.set(key, inputPos);
                 ++i;
             }
             for (let output of node.outputs) {
-                const outputPos = { x: pos.x + size.y, y: pos.y + 100 + i * 100 };
-                const outputSize = { x: 12, y: 12 };
-                const key = `${node.id}_${i}_out`;
-                connectionState.set(key, { pos: outputPos, size: outputSize });
+                const outputPos = { x: pos.x + size.x, y: pos.y + 100 + i * 100 };
+                const key = Connection.computeId(node.id, i, 'output');
+                connectionState.set(key, outputPos);
                 ++i;
             }
         }
         return { nodesState, connectionState };
     }
 
-    private connection(outputId: string, inputId: string) {
+    private connection(outputConn: Connection, inputConn: Connection) {
         const { config } = this.props;
-        const { nodesState } = this.state;
-        const key = `${outputId}_${inputId}`;
+        const { nodesState, connectionState } = this.state;
+        const inputKey = Connection.computeId(inputConn.nodeId, inputConn.connectionId, inputConn.kind);
+        const outputKey = Connection.computeId(outputConn.nodeId, outputConn.connectionId, outputConn.kind);
+        const key = `${outputKey}_${inputKey}`;
         const stroke = '#ccc';
         const width = 2;
-        // const output = nodesState.get(outputId.substring(0, outputId.indexOf('_')));
-        // const input = nodesState.get(inputId.substring(0, inputId.indexOf('_')));
-        // const dy = 40;
-        const output = this.state.connectionState.get(outputId);
-        const input = this.state.connectionState.get(inputId);
-        const a0 = { x: output.pos.x + output.size.x * 0.5, y: output.pos.y + output.size.y * 0.5 };
-        const a3 = { x: input.pos.x + input.size.x * 0.5, y: input.pos.y + input.size.y * 0.5 };
+
+        const outputOffset = connectionState.get(outputKey);
+        const inputOffset = connectionState.get(inputKey);
+        const outputNode = nodesState.get(outputConn.nodeId);
+        const inputNode = nodesState.get(inputConn.nodeId);
+
+        const a0 = vector2d.add(outputOffset, outputNode.pos);
+        const a3 = vector2d.add(inputOffset, inputNode.pos);
         const dx = Math.max(Math.abs(a0.x - a3.x) / 1.5, 100);
         const a1 = { x: a0.x - dx, y: a0.y };
         const a2 = { x: a3.x + dx, y: a3.y };
@@ -170,16 +191,12 @@ export class Editor extends React.Component<Props, State> {
         const key = endpointId;
         const cached = this.endpointCache.get(key);
         const newDomRect: DOMRect = element.getBoundingClientRect() as DOMRect;
-        const newRect = new Rect({ x: newDomRect.x, y: newDomRect.y }, { x: newDomRect.width, y: newDomRect.height });
-        if (cached === undefined || !Rect.compare(newRect, cached)) {
-            // console.log(`setConnectionEndpoint(${id})`)
-            // console.log(newRect);
-            // console.log(cached);
-            this.endpointCache.set(key, newRect);
+        const offset = { x: Math.floor(newDomRect.x + newDomRect.width / 2 - parentPos.x), y: Math.floor(newDomRect.y + newDomRect.height / 2 - parentPos.y) };
+        if (cached === undefined || !vector2d.compare(offset, cached)) {
+            this.endpointCache.set(key, offset);
             setImmediate(() =>
                 this.setState((state, props) => {
-                    // state.connectionState.set(key, { pos: newRect.pos, size: newRect.size });
-                    state.connectionState.get(key).pos = newRect.pos;
+                    state.connectionState.set(key, offset);
                     return state;
                 }));
         }
@@ -255,14 +272,14 @@ export class Editor extends React.Component<Props, State> {
         const properties = (node: Node) => {
             const properties = [];
             properties.push(...node.inputs.map((input, i) => {
-                const key = `${node.id}_${i}_in`;
+                const key = Connection.computeId(node.id, i, 'input');
                 return <div key={key}>
                     {input.name}
                     {dot(node.id, key, 'input')}
                 </div>
             }));
             properties.push(...node.outputs.map((output, i) => {
-                const key = `${node.id}_${i + node.inputs.length}_out`;
+                const key = Connection.computeId(node.id, i + node.inputs.length, 'output');
                 return <div key={key}>
                     {output.renderer ? output.renderer(output) : output.name}
                     {dot(node.id, key, 'output')}
@@ -282,19 +299,17 @@ export class Editor extends React.Component<Props, State> {
                 </div>
             </div>);
 
-        // const connections: { in: string, out: string }[] = props.nodes.reduce((p, input, inputIndex) => [...p, ...input.outputs.map((output, outputIndex) => ({ in: `${input.id}_${inputIndex}_out`, out: `${output.id}_${outputIndex}_in` }))], []);
-        // const connections: { in: string, out: string }[] = props.nodes.reduce((prev, input, inputIndex) => [...prev, ...input.outputs.map(o => props.nodes.filter(n => n.id === o.id)[0].inputs).map(inp => inp.)], []);
-        const connections: { out: string, in: string }[] = [];
+        const connections: { out: Connection, in: Connection }[] = [];
         for (let node of props.nodes) {
             let i = 0;
             for (let input of node.inputs) {
-                const inputId = `${node.id}_${i}_in`;
                 const opp = props.nodes.filter(o => o.id === input.id);
                 let j = 0;
                 for (let output of opp[0].outputs) {
                     if (output.id === node.id) {
-                        const outputId = `${opp[0].id}_${j + opp[0].inputs.length}_out`;
-                        connections.push({ in: inputId, out: outputId });
+                        const inputConn: Connection = { nodeId: node.id, connectionId: i, kind: 'input' };
+                        const outputConn: Connection = { nodeId: opp[0].id, connectionId: j + opp[0].inputs.length, kind: 'output' };
+                        connections.push({ in: inputConn, out: outputConn });
                     }
                     ++j;
                 }
