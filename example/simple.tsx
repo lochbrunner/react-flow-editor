@@ -1,8 +1,31 @@
 import * as React from 'react';
-
 import * as ReactDOM from 'react-dom';
 
 import { Editor, Node, Config } from 'react-flow-editor';
+
+type LogProps = { subscribe: (update: (log: string) => void) => void };
+type LogState = { content: string };
+
+class Log extends React.Component<LogProps, LogState> {
+    constructor(props: LogProps) {
+        super(props);
+        this.state = { content: '' };
+        props.subscribe(this.update.bind(this));
+    }
+
+    private update(log: string) {
+        this.setState({ content: log });
+    }
+
+    render() {
+        const style = {
+            fontFamily: 'Arial',
+            position: 'absolute',
+            bottom: '0'
+        } as any;
+        return <p style={style}>{this.state.content}</p>;
+    }
+}
 
 const nodes: Node[] = [
     {
@@ -32,13 +55,25 @@ function resolver(payload: any): JSX.Element {
     );
 }
 
+let log: (log: string) => void = undefined;
+const onChanged: Config['onChanged'] = data => {
+    if (log === undefined) return;
+    if (data.type === 'ConnectionRemoved')
+        log(`Connection '${data.id}' was removed.`);
+    else if (data.type === 'NodeRemoved')
+        log(`Node '${data.id}' was removed.`);
+};
+
 const config: Config = {
     resolver,
     connectionType: 'bezier',
-    onChanged: node => { }
+    onChanged
 };
 
 ReactDOM.render(
-    <Editor config={config} nodes={nodes} />,
+    <div>
+        <Log subscribe={update => log = update} />
+        <Editor config={config} nodes={nodes} />
+    </div>,
     document.getElementById('root')
 );
