@@ -3,6 +3,8 @@ import * as ReactDOM from 'react-dom';
 
 import { Editor, Node, Config } from 'react-flow-editor';
 
+require('./index.scss');
+
 type LogProps = { subscribe: (update: (log: string) => void) => void };
 type LogState = { content: string };
 

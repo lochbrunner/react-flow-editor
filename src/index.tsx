@@ -193,8 +193,6 @@ export class Editor extends React.Component<Props, State> {
         const key = `${outputKey}_${inputKey}`;
         const connId = computeConnectionId(inputConn, outputConn);
         const isSelected = this.state.selection && this.state.selection.id === connId;
-        const stroke = !isSelected ? '#ccc' : '#fda';
-        const width = 3;
 
         const outputOffset = connectionState.get(outputKey);
         const inputOffset = connectionState.get(inputKey);
@@ -208,10 +206,10 @@ export class Editor extends React.Component<Props, State> {
         const a2 = { x: a3.x + dx, y: a3.y };
 
         if (config.connectionType === 'bezier') {
-            return <path className={isSelected ? 'selected' : ''} onClick={this.select.bind(this, 'connection', connId)} key={key} d={`M${a0.x} ${a0.y} C ${a1.x} ${a1.y}, ${a2.x} ${a2.y}, ${a3.x} ${a3.y}`} stroke={stroke} strokeWidth={width} fill="transparent" />;
+            return <path className={isSelected ? 'connection selected' : 'connection'} onClick={this.select.bind(this, 'connection', connId)} key={key} d={`M${a0.x} ${a0.y} C ${a1.x} ${a1.y}, ${a2.x} ${a2.y}, ${a3.x} ${a3.y}`} />;
         }
         else if (config.connectionType === 'linear')
-            return <line className={isSelected ? 'selected' : ''} onClick={this.select.bind(this, 'connection', connId)} key={key} x1={a0.x} y1={a0.y} x2={a3.x} y2={a3.y} stroke={stroke} fill="transparent" strokeWidth={width} />
+            return <line className={isSelected ? 'connection selected' : 'connection'} onClick={this.select.bind(this, 'connection', connId)} key={key} x1={a0.x} y1={a0.y} x2={a3.x} y2={a3.y} />
     };
 
     private dragStarted(id: string, e: React.MouseEvent) {
@@ -275,7 +273,7 @@ export class Editor extends React.Component<Props, State> {
                     this.props.nodes.splice(index, 1);
                 }
 
-                this.setState((state, props) => {
+                this.setState((state) => {
                     return { ...state, selection: undefined };
                 });
             }
@@ -306,65 +304,13 @@ export class Editor extends React.Component<Props, State> {
 
         const { props, state } = this;
 
-        const nodeStyle = (pos: vector2d, selected: boolean) => ({
-            display: 'inline-block',
-            backgroundColor: '#fafafa',
-            fontFamily: 'Arial',
-            position: 'absolute',
+        const nodeStyle = (pos: vector2d) => ({
             top: `${pos.y}px`,
             left: `${pos.x}px`,
-            border: `1px solid ${!selected ? '#ccc' : '#fda'}`,
-            borderRadius: '10px'
         });
 
-        const nodeHeaderStyle = {
-            borderBottom: '1px solid #ddd',
-            padding: '6px',
-            textAlign: 'center',
-            cursor: 'grab',
-            backgroundColor: '#f7f7f7',
-            userSelect: 'none',
-            MozUserSelect: 'none',
-            borderRadius: '10px 10px 0 0'
-        };
-
-        const nodeBodyStyle = {
-            padding: '10px'
-        };
-
-        const svgStyle = {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            bottom: '0px',
-            right: '0px',
-            height: '100%',
-            width: '100%',
-        };
-
         const dot = (parentId: string, key: string, type: 'input' | 'output') => {
-            const dotStyle = {
-                height: '10px',
-                width: '10px',
-                borderRadius: '50%',
-                display: 'inline-block',
-                marginTop: '3px'
-            };
-            const inputStyle = {
-                ...dotStyle,
-                backgroundColor: '#e22',
-                border: '1px solid #f55',
-                float: 'right',
-                marginRight: '-16px',
-            };
-            const outputStyle = {
-                ...dotStyle,
-                backgroundColor: '#2e2',
-                border: '1px solid #5f5',
-                float: 'left',
-                marginLeft: '-16px',
-            };
-            return <div ref={this.setConnectionEndpoint.bind(this, parentId, key)} style={(type === 'input' ? inputStyle : outputStyle as any)} />
+            return <div ref={this.setConnectionEndpoint.bind(this, parentId, key)} className={`dot ${type}`} />
         };
 
         const properties = (node: Node) => {
@@ -387,11 +333,11 @@ export class Editor extends React.Component<Props, State> {
         };
 
         const nodes = props.nodes.map(node =>
-            <div onClick={this.select.bind(this, 'node', node.id)} key={node.id} style={nodeStyle(state.nodesState.get(node.id).pos, this.state.selection && this.state.selection.id === node.id) as any} className="node">
-                <div onMouseDown={this.dragStarted.bind(this, node.id)} className="node-header" style={nodeHeaderStyle as any}>
+            <div onClick={this.select.bind(this, 'node', node.id)} key={node.id} style={nodeStyle(state.nodesState.get(node.id).pos)} className={`node ${this.state.selection && this.state.selection.id === node.id ? 'selected' : ''}`}>
+                <div onMouseDown={this.dragStarted.bind(this, node.id)} className="header" >
                     {node.id}
                 </div>
-                <div className="node-body" style={nodeBodyStyle}>
+                <div className="body">
                     {props.config.resolver(node.payload)}
                     {properties(node)}
                 </div>
@@ -421,7 +367,7 @@ export class Editor extends React.Component<Props, State> {
 
         return (
             <div tabIndex={0} onKeyDown={this.onKeyDown.bind(this)} onMouseLeave={this.dragEnded.bind(this)} onMouseMove={this.onDrag.bind(this)} onMouseUp={this.dragEnded.bind(this)} className="editor" >
-                <svg style={svgStyle as any} xmlns="http://www.w3.org/2000/svg">
+                <svg className="connections" xmlns="http://www.w3.org/2000/svg">
                     {connectionsLines}
                 </svg>
                 {nodes}

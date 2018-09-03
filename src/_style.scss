@@ -1,0 +1,85 @@
+path.connection {
+    stroke: #ccc;
+    fill: transparent;
+    stroke-width: 3px;
+
+    &.selected {
+        stroke: #fda;
+    }
+}
+
+.node {
+    display: inline-block;
+    background-color: #fafafa;
+    font-family: Arial;
+    position: absolute;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    box-sizing: content-box;
+
+    &.selected {
+        border: 2px solid #fda;
+        margin: -1px;
+    }
+
+    &:hover {
+        &.selected {
+            border: 2px solid #fda;
+            margin: -1px;
+        }
+        
+        border: 1px solid #ddd;
+        background-color: #fcfcfc;
+        > header {
+            background-color: #f9f9f9;
+        }
+    }
+
+    > .header {
+        border-bottom: 1px solid #ddd;
+        padding: 6px;
+        text-align: center;
+        cursor: grab;
+        background-color: #f7f7f7;
+        user-select: none;
+        -moz-user-select: none;
+        border-radius: 10px 10px 0 0;
+    }
+
+    > .body {
+        padding: 10px;
+    }
+}
+
+svg.connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0px;
+    right: 0px;
+    height: 100%;
+    width: 100%;
+}
+
+.dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-top: 3px;
+
+    &.input {
+        background-color: #e22;
+        border: 1px solid #f55;
+        float: right;
+        margin-right: -16px;
+    }
+
+    &.output {
+        background-color: #2e2;
+        border: 1px solid #5f5;
+        float: left;
+        margin-left: -16px;
+    }
+}
+

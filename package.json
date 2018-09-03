@@ -14,8 +14,10 @@
     "homepage": "https://github.com/lochbrunner/react-flow-graph-editor",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
+    "style": "dist/_style.scss",
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "style": "copyfiles -u 1 ./src/*.scss ./dist/"
     },
     "dependencies": {
         "react": "^16.4.2"
@@ -23,6 +25,7 @@
     "peerDependencies": {},
     "devDependencies": {
         "@types/react": "^16.4.11",
+        "copyfiles": "^2.0.0",
         "typescript": "^3.0.1"
     }
 }
