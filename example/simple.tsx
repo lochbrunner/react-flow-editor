@@ -33,7 +33,10 @@ const nodes: Node[] = [
     {
         id: 'Node 1',
         payload: { h1: 'hello' },
-        inputs: [{ id: 'Node 2', name: 'input 1' }],
+        inputs: [{
+            id: 'Node 2', name: 'input 1',
+            renderer: () => <input style={{ width: '80px' }} type="range" min="1" max="100" className="slider" />
+        }],
         outputs: []
     },
     {
@@ -64,6 +67,9 @@ const onChanged: Config['onChanged'] = data => {
         log(`Connection '${data.id}' was removed.`);
     else if (data.type === 'NodeRemoved')
         log(`Node '${data.id}' was removed.`);
+    else if (data.type === 'ConnectionCreated') {
+        log(`New connection between nodes '${data.input.nodeId}' and '${data.output.nodeId}' created.`);
+    }
 };
 
 const config: Config = {
