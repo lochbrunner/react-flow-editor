@@ -13,7 +13,7 @@ export interface Size {
 
 export type BaseConnection = {
     name: string;
-    id?: string;
+    id?: string | string[];
     payload?: any;
     renderer?: (connection: BaseConnection) => JSX.Element;
 };
@@ -95,6 +95,13 @@ function extractConnectionFromId(id: string) {
     const outputId = id.substr(sepIndex + 2);
     return { input: Endpoint.extractEndpointInfo(inputId), output: Endpoint.extractEndpointInfo(outputId) }
 }
+
+function isEmptyArrayOrUndefined(obj) {
+    return obj === undefined || (Array.isArray(obj) && obj.length === 0);
+}
+
+const nodePredicate = (id: string | string[]) => (node: Node) => Array.isArray(id) ? id.indexOf(node.id) >= 0 : node.id === id;
+const epPredicate = (id: string) => (ep: BaseConnection) => Array.isArray(ep.id) ? ep.id.indexOf(id) >= 0 : ep.id === id;
 
 export class Editor extends React.Component<Props, State> {
 
@@ -210,13 +217,32 @@ export class Editor extends React.Component<Props, State> {
         }
     }
 
+    private removeFromArrayOrValue(value: string | string[], item: string | string[]) {
+        if (!Array.isArray(value))
+            return undefined;
+        if (Array.isArray(item)) {
+            for (let it of item) {
+                const index = value.indexOf(it);
+                if (index < 0) return value;
+                value.splice(index, 1);
+                return value;
+            }
+        }
+        else {
+            const index = value.indexOf(item);
+            if (index < 0) return value;
+            value.splice(index, 1);
+            return value;
+        }
+    }
     private removeConnection(input: Endpoint, output: Endpoint) {
+
         const { nodes } = this.props;
         const inputNode = nodes.find(node => node.id === input.nodeId);
         const outputNode = nodes.find(node => node.id === output.nodeId);
 
-        inputNode.inputs[input.connectionId].id = undefined;
-        outputNode.outputs[output.connectionId].id = undefined;
+        inputNode.inputs[input.connectionId].id = this.removeFromArrayOrValue(inputNode.inputs[input.connectionId].id, output.nodeId);
+        outputNode.outputs[output.connectionId].id = this.removeFromArrayOrValue(outputNode.outputs[output.connectionId].id, input.nodeId);
     }
 
     private createConnection(input: Endpoint, output: Endpoint) {
@@ -224,13 +250,17 @@ export class Editor extends React.Component<Props, State> {
         const inputNode = nodes.find(node => node.id === input.nodeId);
         const outputNode = nodes.find(node => node.id === output.nodeId);
 
-        if (inputNode.inputs[input.connectionId].id || outputNode.outputs[output.connectionId].id) {
-            // Connections already exist
-            return;
-        }
+        const isArrayOrUndefined = variable => {
+            return variable === undefined || Array.isArray(variable);
+        };
 
         if (input.kind === output.kind) {
             // Can only create connection between input and output
+            return;
+        }
+
+        if (!isArrayOrUndefined(inputNode.inputs[input.connectionId].id) || !isArrayOrUndefined(outputNode.outputs[output.connectionId].id)) {
+            // Connections already exist
             return;
         }
 
@@ -239,14 +269,22 @@ export class Editor extends React.Component<Props, State> {
             return;
         }
 
-        inputNode.inputs[input.connectionId].id = outputNode.id;
-        outputNode.outputs[output.connectionId].id = inputNode.id;
+        if (Array.isArray(inputNode.inputs[input.connectionId].id))
+            (inputNode.inputs[input.connectionId].id as string[]).push(outputNode.id);
+        else
+            inputNode.inputs[input.connectionId].id = outputNode.id;
+
+        if (Array.isArray(outputNode.outputs[output.connectionId].id))
+            (outputNode.outputs[output.connectionId].id as string[]).push(inputNode.id);
+        else
+            outputNode.outputs[output.connectionId].id = inputNode.id;
         config.onChanged({ type: 'ConnectionCreated', input, output });
         this.setState(state => state);
     }
 
     private onKeyDown(e: React.KeyboardEvent) {
         // console.log(`Key down: ${e.keyCode}`);
+
         const { selection } = this.state;
         if (e.keyCode === KEY_CODE_DELETE) {
             if (selection) {
@@ -261,17 +299,17 @@ export class Editor extends React.Component<Props, State> {
                     // Delete all corresponding connections
                     const nodeToDelete = this.props.nodes[index];
                     for (let input of nodeToDelete.inputs) {
-                        if (input.id === undefined) continue;
-                        const peerNode = this.props.nodes.find(node => node.id === input.id);
-                        const peerOutput = peerNode.outputs.find(ep => ep.id === nodeToDelete.id);
-                        peerOutput.id = undefined;
+                        if (isEmptyArrayOrUndefined(input.id)) continue;
+                        const peerNode = this.props.nodes.find(nodePredicate(input.id));
+                        const peerOutput = peerNode.outputs.find(epPredicate(nodeToDelete.id));
+                        peerOutput.id = this.removeFromArrayOrValue(peerOutput.id, nodeToDelete.id);
                     }
 
                     for (let output of nodeToDelete.outputs) {
-                        if (output.id === undefined) continue;
-                        const peerNode = this.props.nodes.find(node => node.id === output.id);
-                        const peerInput = peerNode.inputs.find(ep => ep.id === nodeToDelete.id);
-                        peerInput.id = undefined;
+                        if (isEmptyArrayOrUndefined(output.id)) continue;
+                        const peerNode = this.props.nodes.find(nodePredicate(output.id));
+                        const peerInput = peerNode.inputs.find(epPredicate(nodeToDelete.id));
+                        peerInput.id = this.removeFromArrayOrValue(peerInput.id, nodeToDelete.id);
                     }
 
                     if (this.props.config.onChanged)
@@ -386,20 +424,23 @@ export class Editor extends React.Component<Props, State> {
             </div>);
 
         const connections: { out: Endpoint, in: Endpoint }[] = [];
+
         for (let node of props.nodes) {
             let i = 0;
             for (let input of node.inputs) {
-                const opp = props.nodes.filter(o => o.id === input.id);
-                if (opp.length < 1 || opp[0].id === undefined)
+                const opps = props.nodes.filter(nodePredicate(input.id)).filter(opp => opp.id !== undefined);
+                if (opps.length < 1)
                     continue;
-                let j = 0;
-                for (let output of opp[0].outputs) {
-                    if (output.id === node.id) {
-                        const inputConn: Endpoint = { nodeId: node.id, connectionId: i, kind: 'input' };
-                        const outputConn: Endpoint = { nodeId: opp[0].id, connectionId: j, kind: 'output' };
-                        connections.push({ in: inputConn, out: outputConn });
+                for (let opp of opps) {
+                    let j = 0;
+                    for (let output of opp.outputs) {
+                        if (nodePredicate(output.id)(node)) {
+                            const inputConn: Endpoint = { nodeId: node.id, connectionId: i, kind: 'input' };
+                            const outputConn: Endpoint = { nodeId: opp.id, connectionId: j, kind: 'output' };
+                            connections.push({ in: inputConn, out: outputConn });
+                        }
+                        ++j;
                     }
-                    ++j;
                 }
                 ++i;
             }
