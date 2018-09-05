@@ -5,7 +5,11 @@ import { Vector2d, Rect } from './geometry';
 
 const KEY_CODE_BACK = 8;
 const KEY_CODE_DELETE = 46;
+const BUTTON_LEFT = 0;
+const BUTTON_RIGHT = 2;
+const BUTTON_MIDDLE = 1;
 
+//#region "Type definitions"
 export interface Size {
     width: number,
     height: number
@@ -59,6 +63,7 @@ type State = {
     connectionState: Map<string, Vector2d>;
     selection?: { type: ItemType, id: string };
     workingItem?: WorkItem;
+    transformation: { dx: number, dy: number, zoom: number }
 }
 
 class Endpoint {
@@ -81,6 +86,8 @@ class Endpoint {
         return { nodeId: match[1], connectionId: parseInt(match[2]), kind: match[3] as any };
     }
 }
+
+//#endregion "Type definitions"
 
 function computeConnectionId(input: Endpoint, output: Endpoint) {
     return `${Endpoint.computeIdIn(input)}__${Endpoint.computeIdIn(output)}`;
@@ -107,7 +114,7 @@ export class Editor extends React.Component<Props, State> {
 
     private mouseDownPos?: {
         lastPos: Vector2d, id: string, type: 'node'
-    } | { lastPos: Vector2d, endpoint: Endpoint, type: 'connection' };
+    } | { lastPos: Vector2d, endpoint: Endpoint, type: 'connection' } | { lastPos: Vector2d, type: 'translate' };
     private endpointCache: Map<string, Vector2d>;
 
     constructor(props: Props) {
@@ -147,8 +154,11 @@ export class Editor extends React.Component<Props, State> {
                 connectionState.set(key, outputPos);
             }
         }
-        return { nodesState, connectionState };
+        const transformation = { dx: 0, dy: 0, zoom: 1 };
+        return { nodesState, connectionState, transformation };
     }
+
+    //#region "User interaction"
 
     private select(type: ItemType, id: string) {
         if (!this.state.selection || this.state.selection.id !== id) {
@@ -159,7 +169,8 @@ export class Editor extends React.Component<Props, State> {
     }
 
     private onDragStarted(id: string, e: React.MouseEvent) {
-        this.mouseDownPos = { lastPos: { x: e.clientX, y: e.clientY }, id: id, type: 'node' };
+        if (e.button === BUTTON_LEFT)
+            this.mouseDownPos = { lastPos: { x: e.clientX, y: e.clientY }, id: id, type: 'node' };
     }
 
     private onDragEnded(e: React.MouseEvent) {
@@ -196,6 +207,11 @@ export class Editor extends React.Component<Props, State> {
                     const workingItem: WorkItem = { type: 'connection', input: free, output: fixed };
                     return { ...state, workingItem }
                 }
+            }
+            else if (this.mouseDownPos.type === 'translate') {
+                const pt = this.state.transformation;
+                const transformation = { dx: pt.dx + dx, dy: pt.dy + dy, zoom: pt.zoom };
+                this.setState(state => ({ ...state, transformation }));
             }
         });
         this.mouseDownPos.lastPos = newPos;
@@ -324,6 +340,29 @@ export class Editor extends React.Component<Props, State> {
         }
     }
 
+    private onMouseGlobalDown(e: React.MouseEvent) {
+        if (e.button === BUTTON_MIDDLE) {
+            this.mouseDownPos = { type: 'translate', lastPos: { x: e.clientX, y: e.clientY } }
+        }
+    }
+
+    private onWheel(e: React.WheelEvent) {
+        const pt = this.state.transformation;
+        const zoomFactor = Math.pow(1.1, e.deltaY);
+        const zoom = pt.zoom * zoomFactor;
+
+        const cx = e.clientX;
+        const cy = e.clientY;
+        // See https://github.com/lochbrunner/meliodraw/blob/master/Melio.Draw/SharpDX/OrthogonalCamera.cs#L116
+        const dy = cy * (pt.zoom - zoom) + pt.dy;
+        const dx = cx * (pt.zoom - zoom) + pt.dx;
+        const transformation = { dx, dy, zoom };
+
+        this.setState(state => ({ ...state, transformation }));
+    }
+
+    //#endregion "User interaction"
+
     private setConnectionEndpoint(conn: Endpoint, element: Element) {
         if (!element) return;
         // Only save relative position
@@ -428,10 +467,10 @@ export class Editor extends React.Component<Props, State> {
         for (let node of props.nodes) {
             let i = 0;
             for (let input of node.inputs) {
-                const opps = props.nodes.filter(nodePredicate(input.id)).filter(opp => opp.id !== undefined);
-                if (opps.length < 1)
+                const opponents = props.nodes.filter(nodePredicate(input.id)).filter(opp => opp.id !== undefined);
+                if (opponents.length < 1)
                     continue;
-                for (let opp of opps) {
+                for (let opp of opponents) {
                     let j = 0;
                     for (let output of opp.outputs) {
                         if (nodePredicate(output.id)(node)) {
@@ -449,13 +488,20 @@ export class Editor extends React.Component<Props, State> {
         const connectionsLines = connections.map(conn => this.connection(conn.out, conn.in));
         const workingItem = state.workingItem && state.workingItem.type === 'connection' ? workingConnection(state.workingItem) : '';
 
+        const { transformation } = state;
+        const nodesStyle = {
+            transform: `matrix(${transformation.zoom},0,0,${transformation.zoom},${transformation.dx},${transformation.dy})`
+        };
+
         return (
-            <div tabIndex={0} onKeyDown={this.onKeyDown.bind(this)} onMouseLeave={this.onDragEnded.bind(this)} onMouseMove={this.onDrag.bind(this)} onMouseUp={this.onDragEnded.bind(this)} className="editor" >
+            <div tabIndex={0} onKeyDown={this.onKeyDown.bind(this)} onWheel={this.onWheel.bind(this)} onMouseLeave={this.onDragEnded.bind(this)} onMouseMove={this.onDrag.bind(this)} onMouseDown={this.onMouseGlobalDown.bind(this)} onMouseUp={this.onDragEnded.bind(this)} className="editor" >
                 <svg className="connections" xmlns="http://www.w3.org/2000/svg">
                     {connectionsLines}
                     {workingItem}
                 </svg>
-                {nodes}
+                <div style={nodesStyle} >
+                    {nodes}
+                </div>
             </div>
         );
     }

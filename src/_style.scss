@@ -1,6 +1,10 @@
 .editor {
     outline: none;
 
+    > div {
+        position: absolute;
+    }
+
     path.connection {
         stroke: #ccc;
         fill: transparent;
