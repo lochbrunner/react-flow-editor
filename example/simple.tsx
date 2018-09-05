@@ -83,7 +83,8 @@ const onChanged: Config['onChanged'] = data => {
 const config: Config = {
     resolver,
     connectionType: 'bezier',
-    onChanged
+    onChanged,
+    showGrid: true
 };
 
 ReactDOM.render(

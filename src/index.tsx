@@ -27,7 +27,6 @@ export interface Connection {
 }
 
 const compareConnections = (a: Connection) => (b: Connection) => a.port === b.port && a.nodeId === b.nodeId;
-// const compareNodeConnection = (a: Node) => (b: Connection) => a.port === b.port && a.nodeId === b.nodeId;
 
 export type BaseConnection = {
     name: string;
@@ -54,6 +53,7 @@ export interface Config {
     connectionValidator?: (output: { nodeId: string, connectionId: number }, input: { nodeId: string, connectionId: number }) => boolean;
     onChanged?: (node: ChangeAction) => void;
     connectionType?: 'bezier' | 'linear';
+    showGrid?: boolean;
 }
 
 export interface Props {
@@ -77,7 +77,8 @@ type State = {
     connectionState: Map<string, Vector2d>;
     selection?: { type: ItemType, id: string };
     workingItem?: WorkItem;
-    transformation: { dx: number, dy: number, zoom: number }
+    transformation: { dx: number, dy: number, zoom: number };
+    componentSize: Size;
 }
 
 class Endpoint {
@@ -173,7 +174,8 @@ export class Editor extends React.Component<Props, State> {
             }
         }
         const transformation = { dx: 0, dy: 0, zoom: 1 };
-        return { nodesState, connectionState, transformation };
+        const componentSize: Size = { width: 800, height: 600 };
+        return { nodesState, connectionState, transformation, componentSize };
     }
 
     //#region "User interaction"
@@ -427,6 +429,16 @@ export class Editor extends React.Component<Props, State> {
 
     }
 
+    private updateEditorSize(element: Element) {
+        if (element === null) return;
+        const width = Math.floor((element as any).width.baseVal.value);
+        const height = Math.floor((element as any).height.baseVal.value);
+
+        if (width < 1 || height < 1) return;
+        if (this.state.componentSize.width !== width || this.state.componentSize.height !== height)
+            setImmediate(() => this.setState(state => ({ ...state, componentSize: { height, width } })));
+    }
+
     private connection(outputConn: Endpoint, inputConn: Endpoint) {
         const { nodesState, connectionState } = this.state;
         const inputKey = Endpoint.computeId(inputConn.nodeId, inputConn.connectionId, inputConn.kind);
@@ -583,13 +595,30 @@ export class Editor extends React.Component<Props, State> {
         const workingItem = state.workingItem && state.workingItem.type === 'connection' ? workingConnection(state.workingItem) : '';
 
         const { transformation } = state;
+
+        const grid = () => {
+            if (!props.config.showGrid) return '';
+            const { width, height } = state.componentSize;
+
+            const dy = 25;
+            const dx = 25;
+            let code = '';
+            for (let iy = 0; iy < height / dy; ++iy)
+                code += `M0 ${dy * (iy + 0.5)} H ${width} `;
+
+            for (let ix = 0; ix < width / dx; ++ix)
+                code += `M${dx * (ix + 0.5)} 0 V ${height} `;
+            return <path fill="transparent" stroke="#eee" d={code} />;
+        };
+
         const nodesStyle = {
             transform: `matrix(${transformation.zoom},0,0,${transformation.zoom},${transformation.dx},${transformation.dy})`
         };
 
         return (
             <div tabIndex={0} onKeyDown={this.onKeyDown.bind(this)} onWheel={this.onWheel.bind(this)} onMouseLeave={this.onDragEnded.bind(this)} onMouseMove={this.onDrag.bind(this)} onMouseDown={this.onMouseGlobalDown.bind(this)} onMouseUp={this.onDragEnded.bind(this)} className="editor" >
-                <svg className="connections" xmlns="http://www.w3.org/2000/svg">
+                <svg ref={this.updateEditorSize.bind(this)} className="connections" xmlns="http://www.w3.org/2000/svg">
+                    {grid()}
                     {connectionsLines}
                     {workingItem}
                 </svg>
