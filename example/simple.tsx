@@ -34,7 +34,7 @@ const nodes: Node[] = [
         id: 'Node 1',
         payload: { h1: 'hello' },
         inputs: [{
-            id: ['Node 2'], name: 'input 1',
+            connection: [{ nodeId: 'Node 2', port: 0 }], name: 'input 1',
             renderer: () => <input style={{ width: '80px' }} type="range" min="1" max="100" className="slider" />
         }],
         outputs: []
@@ -43,21 +43,21 @@ const nodes: Node[] = [
         id: 'Node 2',
         payload: { h1: 'world' },
         inputs: [
-            { id: ['Node 3'], name: 'input 1' },
-            { id: [], name: 'input 2' },
-            { id: [], name: 'input 3' }
+            { connection: [{ nodeId: 'Node 3', port: 0 }], name: 'input 1' },
+            { connection: [], name: 'input 2' },
+            { connection: [], name: 'input 3' }
         ],
         outputs: [
-            { id: ['Node 1'], name: 'output 1' },
-            { id: [], name: 'output 2' },
-            { id: [], name: 'output 3' }
+            { connection: [{ nodeId: 'Node 1', port: 0 }], name: 'output 1' },
+            { connection: [], name: 'output 2' },
+            { connection: [], name: 'output 3' }
         ]
     },
     {
         id: 'Node 3',
         payload: { h1: '!' },
         inputs: [],
-        outputs: [{ id: ['Node 2'], name: 'output 1' }]
+        outputs: [{ connection: [{ nodeId: 'Node 2', port: 0 }], name: 'output 1' }]
     }
 ];
 

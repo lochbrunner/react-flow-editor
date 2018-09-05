@@ -15,9 +15,23 @@ export interface Size {
     height: number
 }
 
+export interface Connection {
+    /**
+     * The other node id which to connect
+     */
+    nodeId: string;
+    /**
+     * The id of the property to connect
+     */
+    port: number;
+}
+
+const compareConnections = (a: Connection) => (b: Connection) => a.port === b.port && a.nodeId === b.nodeId;
+// const compareNodeConnection = (a: Node) => (b: Connection) => a.port === b.port && a.nodeId === b.nodeId;
+
 export type BaseConnection = {
     name: string;
-    id?: string | string[];
+    connection?: Connection | Connection[];
     payload?: any;
     renderer?: (connection: BaseConnection) => JSX.Element;
 };
@@ -107,12 +121,16 @@ function isEmptyArrayOrUndefined(obj) {
     return obj === undefined || (Array.isArray(obj) && obj.length === 0);
 }
 
-const nodePredicate = (id: string | string[]) => (node: Node) => Array.isArray(id) ? id.indexOf(node.id) >= 0 : node.id === id;
-const epPredicate = (id: string) => (ep: BaseConnection) => Array.isArray(ep.id) ? ep.id.indexOf(id) >= 0 : ep.id === id;
+const nodeIdPredicate = (connection: Connection | Connection[]) => (node: Node) => Array.isArray(connection) ? connection.findIndex(conn => conn.nodeId === node.id) >= 0 : node.id === connection.nodeId;
+
+const epPredicate = (nodeId: string, port?: number) => (ep: BaseConnection) => {
+    const comp = (testee: Connection) => (port === undefined || testee.port === port) && testee.nodeId === nodeId;
+    return Array.isArray(ep.connection) ? ep.connection.findIndex(comp) >= 0 : comp(ep.connection);
+};
 
 export class Editor extends React.Component<Props, State> {
 
-    private mouseDownPos?: {
+    private currentAction?: {
         lastPos: Vector2d, id: string, type: 'node'
     } | { lastPos: Vector2d, endpoint: Endpoint, type: 'connection' } | { lastPos: Vector2d, type: 'translate' };
     private endpointCache: Map<string, Vector2d>;
@@ -177,27 +195,27 @@ export class Editor extends React.Component<Props, State> {
 
     private onDragStarted(id: string, e: React.MouseEvent) {
         if (e.button === BUTTON_LEFT)
-            this.mouseDownPos = { lastPos: { x: e.clientX, y: e.clientY }, id: id, type: 'node' };
+            this.currentAction = { lastPos: { x: e.clientX, y: e.clientY }, id: id, type: 'node' };
     }
 
     private onDragEnded(e: React.MouseEvent) {
-        this.mouseDownPos = undefined;
+        this.currentAction = undefined;
         this.setState(state => ({ ...state, workingItem: undefined }));
     }
 
     private onDrag(e: React.MouseEvent) {
-        if (this.mouseDownPos === undefined) return;
+        if (this.currentAction === undefined) return;
         const newPos = { x: e.clientX, y: e.clientY };
-        const dx = newPos.x - this.mouseDownPos.lastPos.x;
-        const dy = newPos.y - this.mouseDownPos.lastPos.y;
+        const dx = newPos.x - this.currentAction.lastPos.x;
+        const dy = newPos.y - this.currentAction.lastPos.y;
         this.setState(state => {
-            if (this.mouseDownPos.type === 'node') {
-                state.nodesState.get(this.mouseDownPos.id).pos.x += dx;
-                state.nodesState.get(this.mouseDownPos.id).pos.y += dy;
+            if (this.currentAction.type === 'node') {
+                state.nodesState.get(this.currentAction.id).pos.x += dx;
+                state.nodesState.get(this.currentAction.id).pos.y += dy;
                 return { ...state };
             }
-            else if (this.mouseDownPos.type === 'connection') {
-                const { endpoint } = this.mouseDownPos;
+            else if (this.currentAction.type === 'connection') {
+                const { endpoint } = this.currentAction;
                 const free = newPos;
 
                 const key = Endpoint.computeId(endpoint.nodeId, endpoint.connectionId, endpoint.kind);
@@ -215,44 +233,44 @@ export class Editor extends React.Component<Props, State> {
                     return { ...state, workingItem }
                 }
             }
-            else if (this.mouseDownPos.type === 'translate') {
+            else if (this.currentAction.type === 'translate') {
                 const pt = this.state.transformation;
                 const transformation = { dx: pt.dx + dx, dy: pt.dy + dy, zoom: pt.zoom };
                 this.setState(state => ({ ...state, transformation }));
             }
         });
-        this.mouseDownPos.lastPos = newPos;
+        this.currentAction.lastPos = newPos;
     }
 
     private onCreateConnectionStarted(endpoint: Endpoint, e: React.MouseEvent) {
-        this.mouseDownPos = { lastPos: { x: e.screenX, y: e.screenY }, endpoint, type: 'connection' };
+        this.currentAction = { lastPos: { x: e.screenX, y: e.screenY }, endpoint, type: 'connection' };
     }
 
     private onCreateConnectionEnded(endpoint: Endpoint, e: React.MouseEvent) {
-        if (this.mouseDownPos && this.mouseDownPos.type === 'connection') {
+        if (this.currentAction && this.currentAction.type === 'connection') {
             // Create new connection
-            if (this.mouseDownPos.endpoint.kind === 'input') {
-                this.createConnection(this.mouseDownPos.endpoint, endpoint);
+            if (this.currentAction.endpoint.kind === 'input') {
+                this.createConnection(this.currentAction.endpoint, endpoint);
             }
-            else if (this.mouseDownPos.endpoint.kind === 'output') {
-                this.createConnection(endpoint, this.mouseDownPos.endpoint);
+            else if (this.currentAction.endpoint.kind === 'output') {
+                this.createConnection(endpoint, this.currentAction.endpoint);
             }
         }
     }
 
-    private removeFromArrayOrValue(value: string | string[], item: string | string[]) {
+    private removeFromArrayOrValue(value: Connection | Connection[], toRemove: Connection | Connection[]) {
         if (!Array.isArray(value))
             return undefined;
-        if (Array.isArray(item)) {
-            for (let it of item) {
-                const index = value.indexOf(it);
+        if (Array.isArray(toRemove)) {
+            for (let it of toRemove) {
+                const index = value.findIndex(compareConnections(it));
                 if (index < 0) return value;
                 value.splice(index, 1);
                 return value;
             }
         }
         else {
-            const index = value.indexOf(item);
+            const index = value.findIndex(compareConnections(toRemove));
             if (index < 0) return value;
             value.splice(index, 1);
             return value;
@@ -264,8 +282,10 @@ export class Editor extends React.Component<Props, State> {
         const inputNode = nodes.find(node => node.id === input.nodeId);
         const outputNode = nodes.find(node => node.id === output.nodeId);
 
-        inputNode.inputs[input.connectionId].id = this.removeFromArrayOrValue(inputNode.inputs[input.connectionId].id, output.nodeId);
-        outputNode.outputs[output.connectionId].id = this.removeFromArrayOrValue(outputNode.outputs[output.connectionId].id, input.nodeId);
+        inputNode.inputs[input.connectionId].connection =
+            this.removeFromArrayOrValue(inputNode.inputs[input.connectionId].connection, { nodeId: output.nodeId, port: output.connectionId });
+        outputNode.outputs[output.connectionId].connection =
+            this.removeFromArrayOrValue(outputNode.outputs[output.connectionId].connection, { nodeId: input.nodeId, port: input.connectionId });
     }
 
     private createConnection(input: Endpoint, output: Endpoint) {
@@ -282,7 +302,7 @@ export class Editor extends React.Component<Props, State> {
             return;
         }
 
-        if (!isArrayOrUndefined(inputNode.inputs[input.connectionId].id) || !isArrayOrUndefined(outputNode.outputs[output.connectionId].id)) {
+        if (!isArrayOrUndefined(inputNode.inputs[input.connectionId].connection) || !isArrayOrUndefined(outputNode.outputs[output.connectionId].connection)) {
             // Connections already exist
             return;
         }
@@ -291,16 +311,17 @@ export class Editor extends React.Component<Props, State> {
             // User validation not passed
             return;
         }
-
-        if (Array.isArray(inputNode.inputs[input.connectionId].id))
-            (inputNode.inputs[input.connectionId].id as string[]).push(outputNode.id);
+        const outputConnection = { nodeId: outputNode.id, port: output.connectionId };
+        if (Array.isArray(inputNode.inputs[input.connectionId].connection))
+            (inputNode.inputs[input.connectionId].connection as Connection[]).push(outputConnection);
         else
-            inputNode.inputs[input.connectionId].id = outputNode.id;
+            inputNode.inputs[input.connectionId].connection = outputConnection
 
-        if (Array.isArray(outputNode.outputs[output.connectionId].id))
-            (outputNode.outputs[output.connectionId].id as string[]).push(inputNode.id);
+        const inputConnection = { nodeId: inputNode.id, port: input.connectionId };
+        if (Array.isArray(outputNode.outputs[output.connectionId].connection))
+            (outputNode.outputs[output.connectionId].connection as Connection[]).push(inputConnection);
         else
-            outputNode.outputs[output.connectionId].id = inputNode.id;
+            outputNode.outputs[output.connectionId].connection = inputConnection;
 
         config.onChanged({ type: 'ConnectionCreated', input, output });
         this.setState(state => state);
@@ -322,18 +343,28 @@ export class Editor extends React.Component<Props, State> {
                     const index = this.props.nodes.findIndex(node => node.id === selection.id);
                     // Delete all corresponding connections
                     const nodeToDelete = this.props.nodes[index];
+                    let inputIndex = -1;
                     for (let input of nodeToDelete.inputs) {
-                        if (isEmptyArrayOrUndefined(input.id)) continue;
-                        const peerNode = this.props.nodes.find(nodePredicate(input.id));
-                        const peerOutput = peerNode.outputs.find(epPredicate(nodeToDelete.id));
-                        peerOutput.id = this.removeFromArrayOrValue(peerOutput.id, nodeToDelete.id);
+                        ++inputIndex;
+                        if (isEmptyArrayOrUndefined(input.connection)) continue;
+                        const peerNodes = this.props.nodes.filter(nodeIdPredicate(input.connection));//  find(nodePredicate(input.id));
+                        for (let peerNode of peerNodes) {
+                            const peerOutputs = peerNode.outputs.filter(epPredicate(nodeToDelete.id));
+                            for (let peerOutput of peerOutputs)
+                                peerOutput.connection = this.removeFromArrayOrValue(peerOutput.connection, { nodeId: nodeToDelete.id, port: inputIndex });
+                        }
                     }
 
+                    let outputIndex = -1;
                     for (let output of nodeToDelete.outputs) {
-                        if (isEmptyArrayOrUndefined(output.id)) continue;
-                        const peerNode = this.props.nodes.find(nodePredicate(output.id));
-                        const peerInput = peerNode.inputs.find(epPredicate(nodeToDelete.id));
-                        peerInput.id = this.removeFromArrayOrValue(peerInput.id, nodeToDelete.id);
+                        ++outputIndex;
+                        if (isEmptyArrayOrUndefined(output.connection)) continue;
+                        const peerNodes = this.props.nodes.filter(nodeIdPredicate(output.connection));
+                        for (let peerNode of peerNodes) {
+                            const peerInputs = peerNode.inputs.filter(epPredicate(nodeToDelete.id));
+                            for (let peerInput of peerInputs)
+                                peerInput.connection = this.removeFromArrayOrValue(peerInput.connection, { nodeId: nodeToDelete.id, port: outputIndex });
+                        }
                     }
 
                     if (this.props.config.onChanged)
@@ -350,7 +381,7 @@ export class Editor extends React.Component<Props, State> {
 
     private onMouseGlobalDown(e: React.MouseEvent) {
         if (e.button === BUTTON_MIDDLE) {
-            this.mouseDownPos = { type: 'translate', lastPos: { x: e.clientX, y: e.clientY } }
+            this.currentAction = { type: 'translate', lastPos: { x: e.clientX, y: e.clientY } }
         }
         else if (e.button === BUTTON_LEFT) {
             this.setState(state => {
@@ -531,19 +562,18 @@ export class Editor extends React.Component<Props, State> {
         for (let node of props.nodes) {
             let i = 0;
             for (let input of node.inputs) {
-                const opponents = props.nodes.filter(nodePredicate(input.id)).filter(opp => opp.id !== undefined);
-                if (opponents.length < 1)
-                    continue;
-                for (let opp of opponents) {
-                    let j = 0;
-                    for (let output of opp.outputs) {
-                        if (nodePredicate(output.id)(node)) {
-                            const inputConn: Endpoint = { nodeId: node.id, connectionId: i, kind: 'input' };
-                            const outputConn: Endpoint = { nodeId: opp.id, connectionId: j, kind: 'output' };
-                            connections.push({ in: inputConn, out: outputConn });
-                        }
-                        ++j;
+                if (input.connection === undefined) continue;
+                if (Array.isArray(input.connection)) {
+                    for (let conn of input.connection) {
+                        const inputConn: Endpoint = { nodeId: node.id, connectionId: i, kind: 'input' };
+                        const outputConn: Endpoint = { nodeId: conn.nodeId, connectionId: conn.port, kind: 'output' };
+                        connections.push({ in: inputConn, out: outputConn });
                     }
+                }
+                else {
+                    const inputConn: Endpoint = { nodeId: node.id, connectionId: i, kind: 'input' };
+                    const outputConn: Endpoint = { nodeId: input.connection.nodeId, connectionId: input.connection.port, kind: 'output' };
+                    connections.push({ in: inputConn, out: outputConn });
                 }
                 ++i;
             }
