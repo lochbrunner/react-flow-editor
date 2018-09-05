@@ -16,7 +16,8 @@
     "types": "./dist/index.d.ts",
     "style": "dist/_style.scss",
     "scripts": {
-        "build": "tsc",
+        "compile": "tsc",
+        "build": "npm run style && npm run compile",
         "style": "copyfiles -u 1 ./src/*.scss ./dist/"
     },
     "dependencies": {

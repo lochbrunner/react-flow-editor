@@ -47,7 +47,7 @@ export interface Props {
     nodes: Node[];
 }
 
-type NodeState = { pos: Vector2d, size: Vector2d, offset?: Vector2d }
+type NodeState = { pos: Vector2d, size: Vector2d, offset?: Vector2d, isCollapsed: boolean }
 
 type ItemType = 'node' | 'connection';
 
@@ -138,7 +138,7 @@ export class Editor extends React.Component<Props, State> {
                 pos.y = place.top;
             }
             const size = { x: 100, y: 100 };    // TODO: get size out of ref 
-            nodesState.set(node.id, { pos, size });
+            nodesState.set(node.id, { pos, size, isCollapsed: false });
             usedPlace.push(new Rect(pos, size));
 
             for (let k in node.inputs) {
@@ -162,10 +162,17 @@ export class Editor extends React.Component<Props, State> {
 
     private select(type: ItemType, id: string) {
         if (!this.state.selection || this.state.selection.id !== id) {
-            this.setState((state, props) => {
+            this.setState(state => {
                 return { ...state, selection: { id, type } };
             });
         }
+    }
+
+    private toggleExpandNode(id: string) {
+        this.setState(state => {
+            state.nodesState.get(id).isCollapsed = !state.nodesState.get(id).isCollapsed;
+            return { ...state };
+        });
     }
 
     private onDragStarted(id: string, e: React.MouseEvent) {
@@ -294,6 +301,7 @@ export class Editor extends React.Component<Props, State> {
             (outputNode.outputs[output.connectionId].id as string[]).push(inputNode.id);
         else
             outputNode.outputs[output.connectionId].id = inputNode.id;
+
         config.onChanged({ type: 'ConnectionCreated', input, output });
         this.setState(state => state);
     }
@@ -344,9 +352,15 @@ export class Editor extends React.Component<Props, State> {
         if (e.button === BUTTON_MIDDLE) {
             this.mouseDownPos = { type: 'translate', lastPos: { x: e.clientX, y: e.clientY } }
         }
+        else if (e.button === BUTTON_LEFT) {
+            this.setState(state => {
+                return { ...state, selection: undefined };
+            });
+        }
     }
 
     private onWheel(e: React.WheelEvent) {
+        if (e.ctrlKey) return;
         const pt = this.state.transformation;
         const zoomFactor = Math.pow(1.1, e.deltaY);
         const zoom = pt.zoom * zoomFactor;
@@ -431,7 +445,6 @@ export class Editor extends React.Component<Props, State> {
             left: `${pos.x}px`,
         });
 
-
         const properties = (node: Node) => {
             const dot = (conn: Endpoint) => {
                 return <div
@@ -440,27 +453,78 @@ export class Editor extends React.Component<Props, State> {
                     ref={this.setConnectionEndpoint.bind(this, conn)}
                     className={`dot ${conn.kind}`} />
             };
-
             const mapProp = (kind: Endpoint['kind']) => (prop: BaseConnection, i: number) => {
                 const key = Endpoint.computeId(node.id, i, kind);
-                return <div key={key}>
-                    {prop.renderer ? prop.renderer(prop) : prop.name}
-                    {dot({ nodeId: node.id, connectionId: i, kind: kind })}
-                </div>
+                return (
+                    <div key={key}>
+                        {prop.renderer ? prop.renderer(prop) : prop.name}
+                        {dot({ nodeId: node.id, connectionId: i, kind: kind })}
+                    </div>
+                );
             };
             return [...node.inputs.map(mapProp('input')), ...node.outputs.map(mapProp('output'))];
         };
 
-        const nodes = props.nodes.map(node =>
-            <div onClick={this.select.bind(this, 'node', node.id)} key={node.id} style={nodeStyle(state.nodesState.get(node.id).pos)} className={`node ${this.state.selection && this.state.selection.id === node.id ? 'selected' : ''}`}>
-                <div onMouseDown={this.onDragStarted.bind(this, node.id)} className="header" >
-                    {node.id}
+        const collapsedProperties = (node: Node) => {
+            const dot = (conn: Endpoint, key: string, index: number, size: number) => {
+                const style = () => {
+                    const radius = 14;
+                    const angle = size === 1 ? 0 : (index - size / 2 + 0.5) * Math.PI / 3;
+                    if (conn.kind === 'input') {
+                        const center = { x: -11, y: 0 };
+                        return {
+                            top: `${center.y + radius * Math.sin(angle)}px`,
+                            left: `${center.x + radius * Math.cos(angle)}px`
+                        }
+                    }
+                    else if (conn.kind === 'output') {
+                        const center = { x: -3, y: 0 };
+                        return {
+                            top: `${center.y + radius * Math.sin(angle)}px`,
+                            left: `${center.x - radius * Math.cos(angle)}px`
+                        }
+                    }
+                };
+                return <div
+                    style={style()}
+                    key={key}
+                    onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
+                    onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
+                    ref={this.setConnectionEndpoint.bind(this, conn)}
+                    className={`dot ${conn.kind}`} />
+            };
+            const mapProp = (kind: Endpoint['kind'], size: number) => (prop: BaseConnection, i: number) => {
+                const key = Endpoint.computeId(node.id, i, kind);
+                return dot({ nodeId: node.id, connectionId: i, kind: kind }, key, i, size)
+            };
+
+            const inputs = <div key={node.id + 'inputs'} className="inputs">{node.inputs.map(mapProp('input', node.inputs.length))}</div>
+            const outputs = <div key={node.id + 'outputs'} className="outputs">{node.outputs.map(mapProp('output', node.outputs.length))}</div>
+
+            return [inputs, outputs];
+        }
+
+        const nodes = props.nodes.map(node => {
+            const nodeState = state.nodesState.get(node.id);
+            const { isCollapsed } = nodeState;
+            const isSelected = this.state.selection && this.state.selection.id === node.id;
+            return (
+                <div onClick={this.select.bind(this, 'node', node.id)} key={node.id} style={nodeStyle(nodeState.pos)}
+                    className={`node ${isCollapsed ? 'collapsed' : ''} ${isSelected ? 'selected' : ''}`}>
+                    <div className="header" >
+                        <div onClick={this.toggleExpandNode.bind(this, node.id)} className="expander" >
+                            <div className={`icon ${isCollapsed ? 'arrow-down' : 'arrow-right'}`} />
+                        </div>
+                        <span onMouseDown={this.onDragStarted.bind(this, node.id)} >{node.id}</span>
+                        {isCollapsed ? collapsedProperties(node) : ''}
+                    </div>
+                    {isCollapsed ? '' : <div className="body">
+                        {props.config.resolver(node.payload)}
+                        {properties(node)}
+                    </div>}
                 </div>
-                <div className="body">
-                    {props.config.resolver(node.payload)}
-                    {properties(node)}
-                </div>
-            </div>);
+            );
+        });
 
         const connections: { out: Endpoint, in: Endpoint }[] = [];
 

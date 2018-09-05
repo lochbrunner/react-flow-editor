@@ -16,17 +16,30 @@
     }
 
     .node {
+        $border-radius-expanded: 6px;
+        $border-radius-collapsed: 15px;
+
         display: inline-block;
         background-color: #fafafa;
         font-family: Arial;
         position: absolute;
-        border-radius: 6px;
+        border-radius: $border-radius-expanded;
         border: 1px solid #ccc;
         box-sizing: content-box;
+
+        transition: border-radius .2s;
 
         &.selected {
             border: 2px solid #fda;
             margin: -1px;
+        }
+
+        &.collapsed {
+            border-radius: $border-radius-collapsed;
+            > .header {
+                border-bottom: 0 solid #ddd;
+                border-radius: $border-radius-collapsed;
+            }
         }
 
         &:hover {
@@ -44,13 +57,44 @@
 
         > .header {
             border-bottom: 1px solid #ddd;
+            min-width: 100px;
             padding: 6px;
             text-align: center;
             cursor: grab;
             background-color: #f7f7f7;
             user-select: none;
             -moz-user-select: none;
-            border-radius: 10px 10px 0 0;
+            border-radius: $border-radius-expanded $border-radius-expanded 0 0;
+
+            .outputs, .inputs {
+                // height: 24px;
+                // width: 12px;
+                position: relative;
+
+                .dot {
+                    position: absolute;
+                }
+            }
+            
+            .outputs {
+                float: left;
+            }
+
+            .inputs {
+                float: right;
+            }
+
+            .expander {
+                height: 20px;
+                width: 20px;
+                margin-top: -3px;
+                float: left;
+                cursor: pointer;
+            }
+            
+            > span {
+                padding: 7px;
+            }
         }
 
         > .body {
@@ -77,6 +121,7 @@
 
         user-select: none;
         -moz-user-select: none;
+        cursor: pointer;
 
         &:hover {
             height: 12px;
@@ -103,5 +148,65 @@
             float: left;
             margin-left: -16px;
         }
+    }
+}
+$icon-color:#999;
+$icon-width: 2px;
+
+.icon {
+    transition: all 0.4s ease;
+
+    &.arrow-right {
+        color: $icon-color;
+        position: absolute;
+        // margin-left: 2px;
+        // margin-top: 10px;
+        // width: 16px;
+        // height: 1px;
+        margin-top: 3px;
+        margin-left: 10px;
+        width: $icon-width;
+        height: 16px;
+        -webkit-transform: rotate(-90deg);
+        transform: rotate(-90deg);
+        background-color: currentColor;
+    }
+    &.arrow-right:before {
+        content: '';
+        position: absolute;
+        // right: 1px;
+        right: -5px;
+        // top: -5px;
+        top: 3px;
+        width: 10px;
+        height: 10px;
+        border-top: solid $icon-width currentColor;
+        border-right: solid $icon-width currentColor;
+        // -webkit-transform: rotate(-45deg);
+        //         transform: rotate(-45deg);
+        -webkit-transform: rotate(135deg);
+        transform: rotate(135deg);
+    }
+
+    &.arrow-down {
+        color: $icon-color;
+        position: absolute;
+        margin-left: 10px;
+        margin-top: 2px;
+        width: $icon-width;
+        height: 16px;
+        background-color: currentColor;
+    }
+    &.arrow-down:before {
+        content: '';
+        position: absolute;
+        left: -5px;
+        top: 3px;
+        width: 10px;
+        height: 10px;
+        border-top: solid $icon-width currentColor;
+        border-right: solid $icon-width currentColor;
+        -webkit-transform: rotate(135deg);
+                transform: rotate(135deg);
     }
 }

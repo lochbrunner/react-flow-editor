@@ -42,8 +42,16 @@ const nodes: Node[] = [
     {
         id: 'Node 2',
         payload: { h1: 'world' },
-        inputs: [{ id: ['Node 3'], name: 'input 1' }],
-        outputs: [{ id: ['Node 1'], name: 'output 1' }]
+        inputs: [
+            { id: ['Node 3'], name: 'input 1' },
+            { id: [], name: 'input 2' },
+            { id: [], name: 'input 3' }
+        ],
+        outputs: [
+            { id: ['Node 1'], name: 'output 1' },
+            { id: [], name: 'output 2' },
+            { id: [], name: 'output 3' }
+        ]
     },
     {
         id: 'Node 3',
@@ -56,7 +64,7 @@ const nodes: Node[] = [
 function resolver(payload: any): JSX.Element {
     if (payload.type === '') return <h2 />;
     return (
-        <p style={{ height: '100px', width: '80px' }}>{payload.h1}</p>
+        <p style={{ height: '100px', width: '60px' }}>{payload.h1}</p>
     );
 }
 
@@ -68,7 +76,7 @@ const onChanged: Config['onChanged'] = data => {
     else if (data.type === 'NodeRemoved')
         log(`Node '${data.id}' was removed.`);
     else if (data.type === 'ConnectionCreated') {
-        log(`New connection between nodes '${data.input.nodeId}' and '${data.output.nodeId}' created.`);
+        log(`New connection between nodes '${data.input.nodeId}' [${data.input.connectionId}]  and '${data.output.nodeId}' [${data.output.connectionId}] created.`);
     }
 };
 
