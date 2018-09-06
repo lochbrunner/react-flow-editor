@@ -135,6 +135,7 @@ export class Editor extends React.Component<Props, State> {
         lastPos: Vector2d, id: string, type: 'node'
     } | { lastPos: Vector2d, endpoint: Endpoint, type: 'connection' } | { lastPos: Vector2d, type: 'translate' };
     private endpointCache: Map<string, Vector2d>;
+    private gridSize?: Size;
 
     constructor(props: Props) {
         super(props);
@@ -395,7 +396,7 @@ export class Editor extends React.Component<Props, State> {
     private onWheel(e: React.WheelEvent) {
         if (e.ctrlKey) return;
         const pt = this.state.transformation;
-        const zoomFactor = Math.pow(1.1, e.deltaY);
+        const zoomFactor = Math.pow(1.25, Math.sign(e.deltaY));
         const zoom = pt.zoom * zoomFactor;
 
         const cx = e.clientX;
@@ -597,18 +598,33 @@ export class Editor extends React.Component<Props, State> {
         const { transformation } = state;
 
         const grid = () => {
-            if (!props.config.showGrid) return '';
             const { width, height } = state.componentSize;
-
             const dy = 25;
             const dx = 25;
-            let code = '';
-            for (let iy = 0; iy < height / dy; ++iy)
-                code += `M0 ${dy * (iy + 0.5)} H ${width} `;
 
-            for (let ix = 0; ix < width / dx; ++ix)
-                code += `M${dx * (ix + 0.5)} 0 V ${height} `;
-            return <path fill="transparent" stroke="#eee" d={code} />;
+            const draw = (element: HTMLCanvasElement) => {
+                if (element === null) return;
+                if (this.gridSize !== undefined && (this.gridSize.height === height && this.gridSize.width === width)) return;
+                this.gridSize = { height, width };
+                console.info(`draw ${width}x${height}`);
+                const ctx = element.getContext('2d');
+                ctx.clearRect(0, 0, element.width, element.height);
+                ctx.beginPath();
+                ctx.strokeStyle = '#eee';
+                for (let iy = 0; iy < height / dy; ++iy) {
+                    const y = dy * (iy + 0.5);
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                }
+
+                for (let ix = 0; ix < width / dx; ++ix) {
+                    const x = dx * (ix + 0.5);
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                }
+                ctx.stroke();
+            };
+            return <canvas className="grid" width={width} height={height} ref={draw.bind(this)} />
         };
 
         const nodesStyle = {
@@ -617,8 +633,8 @@ export class Editor extends React.Component<Props, State> {
 
         return (
             <div tabIndex={0} onKeyDown={this.onKeyDown.bind(this)} onWheel={this.onWheel.bind(this)} onMouseLeave={this.onDragEnded.bind(this)} onMouseMove={this.onDrag.bind(this)} onMouseDown={this.onMouseGlobalDown.bind(this)} onMouseUp={this.onDragEnded.bind(this)} className="editor" >
+                {grid()}
                 <svg ref={this.updateEditorSize.bind(this)} className="connections" xmlns="http://www.w3.org/2000/svg">
-                    {grid()}
                     {connectionsLines}
                     {workingItem}
                 </svg>
