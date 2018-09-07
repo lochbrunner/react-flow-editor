@@ -41,7 +41,7 @@ ReactDOM.render(
 
 See [example](./example/) for usage.
 
-Try the [demo](https://lochbrunner.github.io/react-flow-editor/simple/index.html) in your browser.
+Try the [demo](https://lochbrunner.github.io/react-flow-editor/simple) in your browser.
 
 ## Side effects
 
