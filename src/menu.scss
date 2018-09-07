@@ -1,0 +1,19 @@
+.react-flow-editor-menu-item {
+    width: 120px;
+    border-radius: 15px;
+    margin: 2px;
+    border: 1px solid $border-color;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    padding-top: 7px;
+    padding-bottom: 6px;
+    user-select: none;
+    -moz-user-select: none;
+    cursor: pointer;
+    transition: all 0.4s ease;
+
+    &:hover {
+        border: 1px solid $selected-color;
+        background-color: #fff;
+    }
+}

@@ -5,8 +5,16 @@ export class Vector2d {
     return {x: a.x + b.x, y: a.y + b.y};
   }
 
+  static subtract(a: Vector2d, b: Vector2d): Vector2d {
+    return {x: a.x - b.x, y: a.y - b.y};
+  }
+
   static compare(a: Vector2d, b: Vector2d) {
     return a.x === b.x && a.y === b.y;
+  }
+
+  static floor(a: Vector2d) {
+    return {x: Math.floor(a.x), y: Math.floor(a.y)};
   }
 }
 

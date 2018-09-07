@@ -14,5 +14,11 @@ interface ConnectionCreated {
   type: 'ConnectionCreated';
 }
 
+interface NodeCreated {
+  id: string;
+  type: 'NodeCreated';
+}
 
-export type ChangeAction = NodeRemoved|ConnectionRemoved|ConnectionCreated;
+
+export type ChangeAction =
+    NodeRemoved|ConnectionRemoved|ConnectionCreated|NodeCreated;
