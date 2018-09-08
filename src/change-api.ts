@@ -19,6 +19,5 @@ interface NodeCreated {
   type: 'NodeCreated';
 }
 
-
 export type ChangeAction =
     NodeRemoved|ConnectionRemoved|ConnectionCreated|NodeCreated;

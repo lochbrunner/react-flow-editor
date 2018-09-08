@@ -1,6 +1,9 @@
 import {Vector2d} from './geometry';
 
-export interface Size { width: number, height: number }
+export interface Size {
+  width: number;
+  height: number;
+}
 
 export interface Node {
   name: string;

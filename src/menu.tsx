@@ -3,7 +3,6 @@ import { Vector2d } from './geometry';
 import { BUTTON_LEFT } from './constants';
 import { Node } from './types';
 
-
 export namespace MenuItem {
 
     export interface Props {

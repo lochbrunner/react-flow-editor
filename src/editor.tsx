@@ -25,7 +25,12 @@ export namespace Editor {
     }
 }
 
-type NodeState = { pos: Vector2d, size: Vector2d, offset?: Vector2d, isCollapsed: boolean }
+interface NodeState {
+    pos: Vector2d;
+    size: Vector2d;
+    offset?: Vector2d;
+    isCollapsed: boolean;
+}
 
 type ItemType = 'node' | 'connection';
 
@@ -43,7 +48,7 @@ type State = {
     workingItem?: WorkItem;
     transformation: { dx: number, dy: number, zoom: number };
     componentSize: Size;
-}
+};
 
 class Endpoint {
     nodeId: string;
@@ -80,7 +85,7 @@ function extractConnectionFromId(id: string) {
     const sepIndex = id.indexOf('__');
     const inputId = id.substr(0, sepIndex);
     const outputId = id.substr(sepIndex + 2);
-    return { input: Endpoint.extractEndpointInfo(inputId), output: Endpoint.extractEndpointInfo(outputId) }
+    return { input: Endpoint.extractEndpointInfo(inputId), output: Endpoint.extractEndpointInfo(outputId) };
 }
 
 function isEmptyArrayOrUndefined(obj) {
@@ -128,7 +133,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                     pos.x = place.right + margin.x;
                 pos.y = place.top;
             }
-            const size = { x: 100, y: 100 };    // TODO: get size out of ref 
+            const size = { x: 100, y: 100 };    // TODO: get size out of ref
             nodesState.set(node.id, { pos, size, isCollapsed: false });
             usedPlace.push(new Rect(pos, size));
 
@@ -200,10 +205,10 @@ export class Editor extends React.Component<Editor.Props, State> {
 
                 if (endpoint.kind === 'input') {
                     const workingItem: WorkItem = { type: 'connection', input: fixed, output: free };
-                    return { ...state, workingItem }
+                    return { ...state, workingItem };
                 } else if (endpoint.kind === 'output') {
                     const workingItem: WorkItem = { type: 'connection', input: free, output: fixed };
-                    return { ...state, workingItem }
+                    return { ...state, workingItem };
                 }
             }
             else if (this.currentAction.type === 'translate') {
@@ -288,7 +293,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         if (Array.isArray(inputNode.inputs[input.connectionId].connection))
             (inputNode.inputs[input.connectionId].connection as Connection[]).push(outputConnection);
         else
-            inputNode.inputs[input.connectionId].connection = outputConnection
+            inputNode.inputs[input.connectionId].connection = outputConnection;
 
         const inputConnection = { nodeId: inputNode.id, port: input.connectionId };
         if (Array.isArray(outputNode.outputs[output.connectionId].connection))
@@ -354,7 +359,7 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     private onMouseGlobalDown(e: React.MouseEvent) {
         if (e.button === BUTTON_MIDDLE) {
-            this.currentAction = { type: 'translate', lastPos: { x: e.clientX, y: e.clientY } }
+            this.currentAction = { type: 'translate', lastPos: { x: e.clientX, y: e.clientY } };
         }
         else if (e.button === BUTTON_LEFT) {
             this.setState(state => {
@@ -483,7 +488,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
                     ref={this.setConnectionEndpoint.bind(this, conn)}
-                    className={`dot ${conn.kind}`} />
+                    className={`dot ${conn.kind}`} />;
             };
             const mapProp = (kind: Endpoint['kind']) => (prop: BaseConnection, i: number) => {
                 const key = Endpoint.computeId(node.id, i, kind);
@@ -507,14 +512,14 @@ export class Editor extends React.Component<Editor.Props, State> {
                         return {
                             top: `${center.y + radius * Math.sin(angle)}px`,
                             left: `${center.x + radius * Math.cos(angle)}px`
-                        }
+                        };
                     }
                     else if (conn.kind === 'output') {
                         const center = { x: -3, y: 0 };
                         return {
                             top: `${center.y + radius * Math.sin(angle)}px`,
                             left: `${center.x - radius * Math.cos(angle)}px`
-                        }
+                        };
                     }
                 };
                 return <div
@@ -523,18 +528,18 @@ export class Editor extends React.Component<Editor.Props, State> {
                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
                     ref={this.setConnectionEndpoint.bind(this, conn)}
-                    className={`dot ${conn.kind}`} />
+                    className={`dot ${conn.kind}`} />;
             };
             const mapProp = (kind: Endpoint['kind'], size: number) => (prop: BaseConnection, i: number) => {
                 const key = Endpoint.computeId(node.id, i, kind);
-                return dot({ nodeId: node.id, connectionId: i, kind: kind }, key, i, size)
+                return dot({ nodeId: node.id, connectionId: i, kind: kind }, key, i, size);
             };
 
-            const inputs = <div key={node.id + 'inputs'} className="inputs">{node.inputs.map(mapProp('input', node.inputs.length))}</div>
-            const outputs = <div key={node.id + 'outputs'} className="outputs">{node.outputs.map(mapProp('output', node.outputs.length))}</div>
+            const inputs = <div key={node.id + 'inputs'} className="inputs">{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
+            const outputs = <div key={node.id + 'outputs'} className="outputs">{node.outputs.map(mapProp('output', node.outputs.length))}</div>;
 
             return [inputs, outputs];
-        }
+        };
 
         const nodes = props.nodes.map(node => {
             const nodeState = state.nodesState.get(node.id);
@@ -611,7 +616,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                 }
                 ctx.stroke();
             };
-            return <canvas className="grid" width={width} height={height} ref={draw.bind(this)} />
+            return <canvas className="grid" width={width} height={height} ref={draw.bind(this)} />;
         };
 
         const nodesContainerStyle = {
@@ -658,7 +663,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                 .map(() => Math.floor(Math.random() * chars.length))
                 .map(i => chars.charAt(i))
                 .reduce((p, c) => p + c, '');
-        }
+        };
 
         const id = `${type}_${createHash()}`;
         const name = type;
@@ -695,7 +700,6 @@ export class Editor extends React.Component<Editor.Props, State> {
         const host = document.createElement('div');
         host.className = 'react-flow-creating-node';
         host.appendChild(node);
-
 
         document.body.appendChild(host);
 
