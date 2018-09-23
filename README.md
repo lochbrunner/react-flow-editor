@@ -1,5 +1,6 @@
 [![npm version](https://badge.fury.io/js/react-flow-editor.svg)](https://badge.fury.io/js/react-flow-editor)
 [![Downloads](https://img.shields.io/npm/dt/react-flow-editor.svg)](https://www.npmjs.com/package/react-flow-editor)
+[![GitHub issues](https://img.shields.io/github/issues/lochbrunner/react-flow-editor.svg)](https://github.com/lochbrunner/react-flow-editor/issues)
 
 # Graph editor
 
@@ -90,9 +91,9 @@ By default we recommend to import the default theme with
 
 But you can change the style of all components by coping that file and adjust its values.
 
-## Contribution
+## Contributing
 
-This library is very old. So please consider that it might have some bugs, but I will try to fix them, when they get reported.
+This library is very young. So please consider that it might have some bugs, but I will try to fix them, when they get reported.
 
 If you have any problems or miss an important feature:
 

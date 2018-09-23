@@ -1,6 +1,6 @@
 {
     "name": "react-flow-editor",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "React component which enables creating flow editors with ease",
     "author": {
         "name": "Matthias Lochbrunner",
@@ -9,9 +9,9 @@
     "contributors": [],
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/lochbrunner/react-flow-graph-editor/issues"
+        "url": "https://github.com/lochbrunner/react-flow-editor/issues"
     },
-    "homepage": "https://github.com/lochbrunner/react-flow-graph-editor",
+    "homepage": "https://github.com/lochbrunner/react-flow-editor",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "style": "dist/_style.scss",
@@ -22,9 +22,11 @@
         "lint": "tslint ./{src}/**/*.{ts,tsx}"
     },
     "dependencies": {
+        "lodash": "^4.17.10"
+    },
+    "peerDependencies": {
         "react": "^16.4.2"
     },
-    "peerDependencies": {},
     "devDependencies": {
         "@types/react": "^16.4.11",
         "copyfiles": "^2.0.0",
