@@ -14,14 +14,22 @@ export interface Config {
     resolver: (payload: any) => JSX.Element;
     connectionValidator?: (output: { nodeId: string, connectionId: number }, input: { nodeId: string, connectionId: number }) => boolean;
     onChanged?: (node: ChangeAction) => void;
+    /**
+     * Default is 'bezier'
+     */
     connectionType?: 'bezier' | 'linear';
-    showGrid?: boolean;
+    /**
+     * Default is true. Which results in a grid.size of 18
+     */
+    grid?: boolean | { size: number };
 }
 
 export namespace Editor {
     export interface Props {
         config: Config;
         nodes: Node[];
+        style?: React.CSSProperties;
+        additionalClassName?: string;
     }
 }
 
@@ -591,9 +599,17 @@ export class Editor extends React.Component<Editor.Props, State> {
         const { transformation } = state;
 
         const grid = () => {
+            if (props.config.grid === false)
+                return '';
+
+            let dy = 18;
+            let dx = 18;
+
+            if (props.config.grid !== null && typeof props.config.grid === 'object') {
+                dx = props.config.grid.size || 18;
+                dy = props.config.grid.size || 18;
+            }
             const { width, height } = state.componentSize;
-            const dy = 18;
-            const dx = 18;
 
             const draw = (element: HTMLCanvasElement) => {
                 if (element === null) return;
@@ -624,11 +640,11 @@ export class Editor extends React.Component<Editor.Props, State> {
         };
 
         return (
-            <div ref={this.onEditorUpdate.bind(this)}
+            <div style={props.style} ref={this.onEditorUpdate.bind(this)}
                 tabIndex={0} onKeyDown={this.onKeyDown.bind(this)} onWheel={this.onWheel.bind(this)}
                 onMouseLeave={this.onDragEnded.bind(this)} onMouseMove={this.onDrag.bind(this)}
                 onMouseDown={this.onMouseGlobalDown.bind(this)} onMouseUp={this.onDragEnded.bind(this)}
-                className="react-flow-editor" >
+                className={`react-flow-editor${props.additionalClassName ? ' ' + props.additionalClassName : ''}`} >
                 {grid()}
                 <svg ref={this.updateEditorSize.bind(this)} className="connections" xmlns="http://www.w3.org/2000/svg">
                     {connectionsLines}

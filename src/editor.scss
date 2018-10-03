@@ -1,12 +1,10 @@
 @import "./menu.scss";
-@import "./colors.scss";
+
 $collapse-animation-duration: 0.4s;
 
 .react-flow-editor {
     outline: none;
     position: relative;
-    height: 500px; // Override this in our app
-    width: 800px; // Override this in our app
     overflow: auto;
 }
 
@@ -26,7 +24,7 @@ $collapse-animation-duration: 0.4s;
     }
 
     path.connection {
-        stroke: #ccc;
+        stroke: $path-color;
         fill: transparent;
 
         &.selected {
@@ -38,11 +36,11 @@ $collapse-animation-duration: 0.4s;
         $border-radius-expanded: 6px;
         $border-radius-collapsed: 15px;
         display: inline-block;
-        background-color: #fafafa;
+        background-color: $node-background-color;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         position: absolute;
         border-radius: $border-radius-expanded;
-        border: 1px solid #ccc;
+        border: 1px solid $node-border-color;
         box-sizing: content-box;
         transition: border-radius $collapse-animation-duration;
 
@@ -67,10 +65,10 @@ $collapse-animation-duration: 0.4s;
             }
 
             border: 1px solid $border-color;
-            background-color: #fcfcfc;
+            background-color: $node-background-hover-color;
 
             >header {
-                background-color: #f9f9f9;
+                background-color: $node-header-hover-color;
             }
         }
 
@@ -80,7 +78,7 @@ $collapse-animation-duration: 0.4s;
             padding: 6px;
             text-align: center;
             cursor: grab;
-            background-color: #f7f7f7;
+            background-color: $node-header-color;
             user-select: none;
             -moz-user-select: none;
             border-radius: $border-radius-expanded $border-radius-expanded 0 0;
@@ -147,15 +145,15 @@ $collapse-animation-duration: 0.4s;
             }
 
             &.input {
-                background-color: #e22;
-                border: 1px solid #f55;
+                background-color: $input-color;
+                border: $endpoint-border-radius solid $input-border-color;
                 float: right;
                 margin-right: -16px;
             }
 
             &.output {
-                background-color: #2e2;
-                border: 1px solid #5f5;
+                background-color: $output-color;
+                border: $endpoint-border-radius solid $output-border-color;
                 float: left;
                 margin-left: -16px;
             }

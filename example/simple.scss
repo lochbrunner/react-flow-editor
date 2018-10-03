@@ -9,6 +9,11 @@ body {
     margin: 0;
 }
 
+.react-flow-editor {
+    height: 500px; // Override this in our app
+    width: 800px; // Override this in our app
+}
+
 .log {
     position: absolute;
     bottom: 0px;
