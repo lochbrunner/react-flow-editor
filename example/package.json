@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Example for react-flow-editor",
   "scripts": {
-    "start": "webpack-dev-server --debug --devtool cheap-module-source-map --output-pathinfo --history-api-fallback --hot --inline --progress --colors --port 3000 --open",
+    "start": "webpack-dev-server --debug --devtool cheap-module-source-map --output-pathinfo --history-api-fallback --hot --inline --progress --colors --port 3001 --open",
     "lint": "tslint *.{ts,tsx}",
     "build": "webpack"
   },

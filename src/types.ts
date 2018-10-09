@@ -27,10 +27,12 @@ export interface Connection {
   port: number;
 }
 
-export type BaseConnection = {
-  name: string; connection?: Connection | Connection[]; payload?: any;
+export interface BaseConnection {
+  name: string;
+  connection?: Connection|Connection[];
+  payload?: any;
   renderer?: (connection: BaseConnection) => JSX.Element;
-};
+}
 
 export type BaseInput = BaseConnection&{};
 

@@ -112,7 +112,8 @@ const config: Config = {
     resolver,
     connectionType: 'bezier',
     onChanged,
-    grid: true
+    grid: true,
+    direction: 'ew'
 };
 
 ReactDOM.render(

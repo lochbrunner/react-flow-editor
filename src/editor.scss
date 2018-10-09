@@ -135,11 +135,11 @@ $collapse-animation-duration: 0.4s;
                 width: 12px;
                 margin-top: 1px;
 
-                &.input {
+                &.left {
                     margin-right: -17px;
                 }
 
-                &.output {
+                &.right {
                     margin-left: -17px;
                 }
             }
@@ -147,13 +147,19 @@ $collapse-animation-duration: 0.4s;
             &.input {
                 background-color: $input-color;
                 border: $endpoint-border-radius solid $input-border-color;
-                float: right;
-                margin-right: -16px;
             }
 
             &.output {
                 background-color: $output-color;
                 border: $endpoint-border-radius solid $output-border-color;
+            }
+
+            &.left {
+                float: right;
+                margin-right: -16px;
+            }
+
+            &.right {
                 float: left;
                 margin-left: -16px;
             }

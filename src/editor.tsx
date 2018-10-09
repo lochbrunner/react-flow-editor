@@ -22,6 +22,11 @@ export interface Config {
      * Default is true. Which results in a grid.size of 18
      */
     grid?: boolean | { size: number };
+    connectionAnchorsLength?: number;
+    /**
+     * Default is 'we'
+     */
+    direction?: 'ew' | 'we';
 }
 
 export namespace Editor {
@@ -62,6 +67,7 @@ class Endpoint {
     nodeId: string;
     connectionId: number;
     kind: 'input' | 'output';
+    name?: string;
 
     static computeId(nodeId: Endpoint['nodeId'], connectionId: Endpoint['connectionId'], kind: Endpoint['kind']) {
         return `${nodeId}_${connectionId}_${kind}`;
@@ -408,8 +414,9 @@ export class Editor extends React.Component<Editor.Props, State> {
         };
         if (cached === undefined || !Vector2d.compare(offset, cached)) {
             this.endpointCache.set(key, offset);
+            // TODO: Bundle all connection endpoint updates to one this.setState call
             setImmediate(() =>
-                this.setState((state, props) => {
+                this.setState(state => {
                     state.connectionState.set(key, offset);
                     return state;
                 }));
@@ -449,7 +456,9 @@ export class Editor extends React.Component<Editor.Props, State> {
     private connectionPath(output: Vector2d, input: Vector2d, selected?: boolean, key?: string, onClick?: (e: React.MouseEvent) => void) {
         const a0 = output;
         const a3 = input;
-        const dx = Math.max(Math.abs(a0.x - a3.x) / 1.5, 100);
+        const anchorLength = this.props.config.connectionAnchorsLength || 100;
+        const dir = this.props.config.direction || 'we';
+        const dx = Math.max(Math.abs(a0.x - a3.x) / 1.5, anchorLength) * (dir === 'we' ? 1 : -1);
         const a1 = { x: a0.x - dx, y: a0.y };
         const a2 = { x: a3.x + dx, y: a3.y };
 
@@ -492,11 +501,14 @@ export class Editor extends React.Component<Editor.Props, State> {
 
         const properties = (node: Node) => {
             const dot = (conn: Endpoint) => {
+                const dir = this.props.config.direction || 'we';
+                const dirMapping = dir === 'we' ? { 'input': 'left', 'output': 'right' } : { 'input': 'right', 'output': 'left' };
                 return <div
                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
                     ref={this.setConnectionEndpoint.bind(this, conn)}
-                    className={`dot ${conn.kind}`} />;
+                    className={`dot ${conn.kind} ${dirMapping[conn.kind]}`}
+                    title={conn.kind} />;
             };
             const mapProp = (kind: Endpoint['kind']) => (prop: BaseConnection, i: number) => {
                 const key = Endpoint.computeId(node.id, i, kind);
@@ -556,11 +568,14 @@ export class Editor extends React.Component<Editor.Props, State> {
             return (
                 <div onClick={this.select.bind(this, 'node', node.id)} key={node.id} style={nodeStyle(nodeState.pos)}
                     className={`node ${isCollapsed ? 'collapsed' : ''} ${isSelected ? 'selected' : ''}`}>
-                    <div className="header" >
-                        <div onClick={this.toggleExpandNode.bind(this, node.id)} className="expander" >
+                    <div
+                        onDoubleClick={this.toggleExpandNode.bind(this, node.id)}
+                        onMouseDown={this.onDragStarted.bind(this, node.id)}
+                        className="header" >
+                        <div className="expander" >
                             <div className={`icon ${isCollapsed ? 'arrow-down' : 'arrow-right'}`} />
                         </div>
-                        <span onMouseDown={this.onDragStarted.bind(this, node.id)} >{node.name}</span>
+                        <span>{node.name}</span>
                         {isCollapsed ? collapsedProperties(node) : ''}
                     </div>
                     {isCollapsed ? '' : <div className="body">
@@ -571,6 +586,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             );
         });
 
+        // Find all connections
         const connections: { out: Endpoint, in: Endpoint }[] = [];
 
         for (let node of props.nodes) {
