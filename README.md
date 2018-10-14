@@ -69,7 +69,9 @@ export interface Config {
     connectionValidator?: (output: { nodeId: string, connectionId: number }, input: { nodeId: string, connectionId: number }) => boolean;
     onChanged?: (node: ChangeAction) => void;
     connectionType?: 'bezier' | 'linear';
-    showGrid?: boolean;
+    grid?: boolean | { size: number };
+    connectionAnchorsLength?: number;
+    direction?: 'ew' | 'we';
 }
 ```
 
@@ -79,7 +81,9 @@ resolver | A function returning a React component which gets placed into the nod
 connectionValidator | A function which evaluates if a possible connection might be valid or not
 onChanged | A callback which gets called when the flow graph changed
 connectionType | The geometry type of the connection lines between the nodes
-showGrid | Specifies if the grid should be rendered or not (Default is `false`)
+grid | Specifies if the grid should be rendered or not (Default is `true`). Optional specifies distances between the lines (`size`). Default is 18.
+connectionAnchorsLength | Specifies the langth of the anker when using `bezier` as `connectionType`.
+direction | Specifies the orientation of the input and output ports. Default is `we`.
 
 ### Themes
 

@@ -85,7 +85,8 @@ $collapse-animation-duration: 0.4s;
             transition: border-radius $collapse-animation-duration;
 
             .outputs,
-            .inputs {
+            .inputs,
+            .dot {
                 // height: 24px;
                 // width: 12px;
                 position: relative;
@@ -95,11 +96,11 @@ $collapse-animation-duration: 0.4s;
                 }
             }
 
-            .outputs {
+            .connections.left {
                 float: left;
             }
 
-            .inputs {
+            .connections.right {
                 float: right;
             }
 
@@ -155,13 +156,13 @@ $collapse-animation-duration: 0.4s;
             }
 
             &.left {
-                float: right;
-                margin-right: -16px;
+                float: left;
+                margin-left: -16px;
             }
 
             &.right {
-                float: left;
-                margin-left: -16px;
+                float: right;
+                margin-right: -16px;
             }
         }
     }

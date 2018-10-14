@@ -499,10 +499,11 @@ export class Editor extends React.Component<Editor.Props, State> {
             left: `${pos.x}px`,
         });
 
+        const dir = this.props.config.direction || 'we';
+        const dirMapping = dir === 'we' ? { 'input': 'right', 'output': 'left' } : { 'input': 'left', 'output': 'right' };
+
         const properties = (node: Node) => {
             const dot = (conn: Endpoint) => {
-                const dir = this.props.config.direction || 'we';
-                const dirMapping = dir === 'we' ? { 'input': 'left', 'output': 'right' } : { 'input': 'right', 'output': 'left' };
                 return <div
                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
@@ -525,21 +526,24 @@ export class Editor extends React.Component<Editor.Props, State> {
         const collapsedProperties = (node: Node) => {
             const dot = (conn: Endpoint, key: string, index: number, size: number) => {
                 const style = () => {
-                    const radius = 14;
-                    const angle = size === 1 ? 0 : (index - size / 2 + 0.5) * Math.PI / 3;
-                    if (conn.kind === 'input') {
-                        const center = { x: -11, y: 0 };
+                    const radius = 20;
+                    const angle = size === 1 ? 0 : (index - size / 2 + 0.5) * Math.PI / 4;
+                    if (dirMapping[conn.kind] === 'right') {
+                        const center = { x: -20, y: 1 };
                         return {
                             top: `${center.y + radius * Math.sin(angle)}px`,
                             left: `${center.x + radius * Math.cos(angle)}px`
                         };
                     }
-                    else if (conn.kind === 'output') {
-                        const center = { x: -3, y: 0 };
+                    else if (dirMapping[conn.kind] === 'left') {
+                        const center = { x: 0, y: 1 };
                         return {
                             top: `${center.y + radius * Math.sin(angle)}px`,
                             left: `${center.x - radius * Math.cos(angle)}px`
                         };
+                    }
+                    else {
+                        console.warn(`Unknown dir ${conn.kind}`);
                     }
                 };
                 return <div
@@ -548,15 +552,15 @@ export class Editor extends React.Component<Editor.Props, State> {
                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
                     ref={this.setConnectionEndpoint.bind(this, conn)}
-                    className={`dot ${conn.kind}`} />;
+                    className={`dot ${conn.kind} ${dirMapping[conn.kind]}`} />;
             };
             const mapProp = (kind: Endpoint['kind'], size: number) => (prop: BaseConnection, i: number) => {
                 const key = Endpoint.computeId(node.id, i, kind);
                 return dot({ nodeId: node.id, connectionId: i, kind: kind }, key, i, size);
             };
 
-            const inputs = <div key={node.id + 'inputs'} className="inputs">{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
-            const outputs = <div key={node.id + 'outputs'} className="outputs">{node.outputs.map(mapProp('output', node.outputs.length))}</div>;
+            const inputs = <div key={node.id + 'inputs'} className={`connections ${dirMapping['input']}`}>{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
+            const outputs = <div key={node.id + 'outputs'} className={`connections ${dirMapping['output']}`}>{node.outputs.map(mapProp('output', node.outputs.length))}</div>;
 
             return [inputs, outputs];
         };
