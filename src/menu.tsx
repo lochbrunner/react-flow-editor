@@ -26,7 +26,7 @@ export class MenuItem extends React.Component<MenuItem.Props, State> {
         super(props);
     }
 
-    private onStartCreatingNewNode(e: React.MouseEvent) {
+    private onStartCreatingNewNode(e: React.MouseEvent<HTMLElement>) {
         if (e.button === BUTTON_LEFT) {
             const { props } = this;
             const pos = this.offset;

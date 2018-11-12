@@ -33,20 +33,19 @@ $collapse-animation-duration: 0.4s;
     }
 
     .node {
-        $border-radius-expanded: 6px;
-        $border-radius-collapsed: 15px;
         display: inline-block;
         background-color: $node-background-color;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         position: absolute;
         border-radius: $border-radius-expanded;
-        border: 1px solid $node-border-color;
+        border: $node-border-width solid $node-border-color;
         box-sizing: content-box;
-        transition: border-radius $collapse-animation-duration;
+
+        transition: $node-transitions;
 
         &.selected {
-            border: 2px solid $selected-color;
-            margin: -1px;
+            border: $node-border-width-selected solid $selected-color;
+            margin: #{$node-border-width - $node-border-width-selected};
         }
 
         &.collapsed {
@@ -60,11 +59,11 @@ $collapse-animation-duration: 0.4s;
 
         &:hover {
             &.selected {
-                border: 2px solid $selected-color;
-                margin: -1px;
+                border: $node-border-width-selected solid $selected-color;
+                margin: #{$node-border-width - $node-border-width-selected};
             }
 
-            border: 1px solid $border-color;
+            border: $node-border-width solid $border-color;
             background-color: $node-background-hover-color;
 
             >header {
@@ -73,7 +72,7 @@ $collapse-animation-duration: 0.4s;
         }
 
         >.header {
-            border-bottom: 1px solid $border-color;
+            border-bottom: $node-border-width solid $border-color;
             min-width: 100px;
             padding: 6px;
             text-align: center;
@@ -176,7 +175,6 @@ $collapse-animation-duration: 0.4s;
     }
 }
 
-$icon-color:#999;
 $icon-width: 2px;
 
 .icon {

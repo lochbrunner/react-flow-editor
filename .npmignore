@@ -2,6 +2,7 @@
 .vscode
 docs
 example
+node_modules
 src
 test
 tsconfig.json

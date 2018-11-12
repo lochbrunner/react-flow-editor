@@ -36,7 +36,7 @@
     "url-loader": "^0.6.2",
     "webpack": "^3.8.1",
     "webpack-dev-server": "^2.9.4",
-    "react-flow-editor": "file:../"
+    "react-flow-editor": "file:../../"
   },
   "dependencies": {
     "react": "^15.6.1",

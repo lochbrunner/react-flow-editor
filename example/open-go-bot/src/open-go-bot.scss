@@ -1,0 +1,65 @@
+// @import "../node_modules/react-flow-editor/dist/default-theme.scss";
+$selected-color: #fda;
+$border-color:#eee;
+$node-border-width: 1px;
+$node-border-width-selected: 2px;
+
+$node-background-color: #fff;
+$node-background-hover-color: #fff;
+$node-border-color: #eee;
+
+$node-header-color: #fdfdfd;
+$node-header-hover-color: #f9f9f9;
+
+$path-color: #e8e8e8;
+
+$input-color: #aaf;
+$input-border-color: #22f;
+
+$output-color: #afa;
+$output-border-color: #2f2;
+
+$endpoint-border-radius: 1px;
+
+$border-radius-expanded: 0px;
+$border-radius-collapsed: 0px;
+
+$collapse-animation-duration: 0.4s;
+
+$icon-color:#777;
+
+$node-transitions: box-shadow 0.2s ease-in-out;
+
+.react-flow-editor {
+    .node {
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
+
+        &:hover,
+        &.selected {
+            box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 18px 0px;
+
+        }
+    }
+}
+
+@import "../node_modules/react-flow-editor/dist/style";
+
+body {
+    margin: 0;
+}
+
+.react-flow-editor {
+    // height: 500px; // Override this in our app
+    // width: 800px; // Override this in our app
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+.menu {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    height: 20px;
+}

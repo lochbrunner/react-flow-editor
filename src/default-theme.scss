@@ -1,5 +1,7 @@
 $selected-color: #fda;
 $border-color:#ddd;
+$node-border-width: 1px;
+$node-border-width-selected: 2px;
 
 $node-background-color: #fafafa;
 $node-background-hover-color: #fcfcfc;
@@ -17,3 +19,10 @@ $output-color: #2e2;
 $output-border-color: #5f5;
 
 $endpoint-border-radius: 1px;
+
+$border-radius-expanded: 6px;
+$border-radius-collapsed: 15px;
+
+$icon-color:#999;
+
+$node-transitions: border-radius $collapse-animation-duration;

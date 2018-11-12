@@ -1,6 +1,6 @@
 {
     "name": "react-flow-editor",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "React component which enables creating flow editors with ease",
     "author": {
         "name": "Matthias Lochbrunner",
@@ -19,16 +19,17 @@
         "compile": "tsc",
         "build": "npm run style && npm run compile",
         "style": "copyfiles -u 1 ./src/*.scss ./dist/",
-        "lint": "tslint ./{src}/**/*.{ts,tsx}"
+        "lint": "tslint ./{src}/**/*.{ts,tsx}",
+        "refresh": " rm -rf ./example/open-go-bot/node_modules/react-flow-editor/dist && cp -r ./dist ./example/open-go-bot/node_modules/react-flow-editor/dist"
     },
     "dependencies": {
         "lodash": "^4.17.10"
     },
     "peerDependencies": {
-        "react": "^16.4.2"
+        "react": "^15.6.1"
     },
     "devDependencies": {
-        "@types/react": "^16.4.11",
+        "@types/react": "^15.6.1",
         "copyfiles": "^2.0.0",
         "tslint": "^5.11.0",
         "typescript": "^3.0.1"

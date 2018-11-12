@@ -12,8 +12,8 @@ export interface Node {
   payload: any;
   inputs: BaseInput[];
   outputs: BaseOutput[];
-  size?: Size;
   position?: Vector2d;
+  properties?: {display: 'stacked' | 'only-dots'};
 }
 
 export interface Connection {
