@@ -1,4 +1,4 @@
-# Open Go Bot
+# Redux example
 
 This example demonstrates the usage case for [open go bot](https://github.com/lochbrunner/open-go-bot)
 

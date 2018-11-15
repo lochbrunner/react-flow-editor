@@ -14,6 +14,7 @@ export interface Node {
   outputs: BaseOutput[];
   position?: Vector2d;
   properties?: {display: 'stacked' | 'only-dots'};
+  classNames?: string[];
 }
 
 export interface Connection {

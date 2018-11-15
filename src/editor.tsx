@@ -63,7 +63,14 @@ type State = {
     componentSize: Size;
 };
 
-class Endpoint {
+export interface Endpoint {
+    nodeId: string;
+    connectionId: number;
+    kind: 'input' | 'output';
+    name?: string;
+}
+
+class EndpointImpl implements Endpoint {
     nodeId: string;
     connectionId: number;
     kind: 'input' | 'output';
@@ -89,7 +96,7 @@ class Endpoint {
 //#region "Helper function"
 
 function computeConnectionId(input: Endpoint, output: Endpoint) {
-    return `${Endpoint.computeIdIn(input)}__${Endpoint.computeIdIn(output)}`;
+    return `${EndpointImpl.computeIdIn(input)}__${EndpointImpl.computeIdIn(output)}`;
 }
 
 /**
@@ -99,7 +106,7 @@ function extractConnectionFromId(id: string) {
     const sepIndex = id.indexOf('__');
     const inputId = id.substr(0, sepIndex);
     const outputId = id.substr(sepIndex + 2);
-    return { input: Endpoint.extractEndpointInfo(inputId), output: Endpoint.extractEndpointInfo(outputId) };
+    return { input: EndpointImpl.extractEndpointInfo(inputId), output: EndpointImpl.extractEndpointInfo(outputId) };
 }
 
 function isEmptyArrayOrUndefined(obj) {
@@ -158,13 +165,13 @@ export class Editor extends React.Component<Editor.Props, State> {
             for (let k in node.inputs) {
                 const i = parseInt(k);
                 const inputPos = { x: pos.x, y: pos.y + 100 + i * 100 };
-                const key = Endpoint.computeId(node.id, i, 'input');
+                const key = EndpointImpl.computeId(node.id, i, 'input');
                 connectionState.set(key, inputPos);
             }
             for (let k in node.outputs) {
                 const i = parseInt(k);
                 const outputPos = { x: pos.x + size.x, y: pos.y + 100 + i * 100 };
-                const key = Endpoint.computeId(node.id, i, 'output');
+                const key = EndpointImpl.computeId(node.id, i, 'output');
                 connectionState.set(key, outputPos);
             }
         }
@@ -214,7 +221,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                 const { endpoint } = this.currentAction;
                 const free = Vector2d.subtract(newPos, this.editorBoundingRect);
 
-                const key = Endpoint.computeId(endpoint.nodeId, endpoint.connectionId, endpoint.kind);
+                const key = EndpointImpl.computeId(endpoint.nodeId, endpoint.connectionId, endpoint.kind);
 
                 const offset = this.state.connectionState.get(key);
                 const node = this.state.nodesState.get(endpoint.nodeId);
@@ -307,21 +314,23 @@ export class Editor extends React.Component<Editor.Props, State> {
             // User validation not passed
             return;
         }
-        const outputConnection = { nodeId: outputNode.id, port: output.connectionId };
-        if (Array.isArray(inputNode.inputs[input.connectionId].connection))
-            (inputNode.inputs[input.connectionId].connection as Connection[]).push(outputConnection);
-        else
-            inputNode.inputs[input.connectionId].connection = outputConnection;
-
-        const inputConnection = { nodeId: inputNode.id, port: input.connectionId };
-        if (Array.isArray(outputNode.outputs[output.connectionId].connection))
-            (outputNode.outputs[output.connectionId].connection as Connection[]).push(inputConnection);
-        else
-            outputNode.outputs[output.connectionId].connection = inputConnection;
-
-        if (config.onChanged !== undefined)
+        if (config.onChanged !== undefined) {
             config.onChanged({ type: 'ConnectionCreated', input, output });
-        this.setState(state => state);
+        } else {
+            const outputConnection = { nodeId: outputNode.id, port: output.connectionId };
+            if (Array.isArray(inputNode.inputs[input.connectionId].connection))
+                (inputNode.inputs[input.connectionId].connection as Connection[]).push(outputConnection);
+            else
+                inputNode.inputs[input.connectionId].connection = outputConnection;
+
+            const inputConnection = { nodeId: inputNode.id, port: input.connectionId };
+            if (Array.isArray(outputNode.outputs[output.connectionId].connection))
+                (outputNode.outputs[output.connectionId].connection as Connection[]).push(inputConnection);
+            else
+                outputNode.outputs[output.connectionId].connection = inputConnection;
+
+            this.setState(state => state);
+        }
     }
 
     private onKeyDown(e: React.KeyboardEvent<HTMLElement>) {
@@ -332,9 +341,10 @@ export class Editor extends React.Component<Editor.Props, State> {
             if (selection) {
                 if (selection.type === 'connection') {
                     const { input, output } = extractConnectionFromId(selection.id);
-                    this.removeConnection(input, output);
+
                     if (this.props.config.onChanged)
-                        this.props.config.onChanged({ type: 'ConnectionRemoved', id: selection.id });
+                        this.props.config.onChanged({ input, output, type: 'ConnectionRemoved', id: selection.id });
+                    else this.removeConnection(input, output);
                 }
                 else if (selection.type === 'node') {
                     const index = this.props.nodes.findIndex(node => node.id === selection.id);
@@ -366,7 +376,8 @@ export class Editor extends React.Component<Editor.Props, State> {
 
                     if (this.props.config.onChanged)
                         this.props.config.onChanged({ type: 'NodeRemoved', id: selection.id });
-                    this.props.nodes.splice(index, 1);
+                    else
+                        this.props.nodes.splice(index, 1);
                 }
 
                 this.setState((state) => {
@@ -409,7 +420,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         if (!element) return;
         // Only save relative position
         const parentPos = this.state.nodesState.get(conn.nodeId).pos;
-        const key = Endpoint.computeId(conn.nodeId, conn.connectionId, conn.kind);
+        const key = EndpointImpl.computeId(conn.nodeId, conn.connectionId, conn.kind);
         const cached = this.endpointCache.get(key);
         const newDomRect: DOMRect = element.getBoundingClientRect() as DOMRect;
         const globalOffset: Vector2d = this.editorBoundingRect || { x: 0, y: 0 };
@@ -441,8 +452,8 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     private connection(outputConn: Endpoint, inputConn: Endpoint) {
         const { nodesState, connectionState } = this.state;
-        const inputKey = Endpoint.computeId(inputConn.nodeId, inputConn.connectionId, inputConn.kind);
-        const outputKey = Endpoint.computeId(outputConn.nodeId, outputConn.connectionId, outputConn.kind);
+        const inputKey = EndpointImpl.computeId(inputConn.nodeId, inputConn.connectionId, inputConn.kind);
+        const outputKey = EndpointImpl.computeId(outputConn.nodeId, outputConn.connectionId, outputConn.kind);
         const key = `${outputKey}_${inputKey}`;
         const connId = computeConnectionId(inputConn, outputConn);
         const isSelected = this.state.selection && this.state.selection.id === connId;
@@ -516,7 +527,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                         const site = dirMapping[kind];
                         const style = site === 'right' ? { right: '7px' } : {};
                         return (
-                            <div key={Endpoint.computeId(node.id, index, kind)}>
+                            <div key={EndpointImpl.computeId(node.id, index, kind)}>
                                 <div
                                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
@@ -539,7 +550,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                         title={name} />;
 
                 const mapProp = (kind: Endpoint['kind']) => (prop: BaseConnection, index: number) => {
-                    const key = Endpoint.computeId(node.id, index, kind);
+                    const key = EndpointImpl.computeId(node.id, index, kind);
                     return (
                         <div key={key}>
                             {prop.renderer ? prop.renderer(prop) : prop.name}
@@ -583,7 +594,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                     className={`dot ${conn.kind} ${dirMapping[conn.kind]}`} />;
             };
             const mapProp = (kind: Endpoint['kind'], size: number) => (prop: BaseConnection, i: number) => {
-                const key = Endpoint.computeId(node.id, i, kind);
+                const key = EndpointImpl.computeId(node.id, i, kind);
                 return dot({ nodeId: node.id, connectionId: i, kind: kind }, key, i, size);
             };
 
@@ -603,7 +614,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             const isSelected = this.state.selection && this.state.selection.id === node.id;
             return (
                 <div onClick={this.select.bind(this, 'node', node.id)} key={node.id} style={nodeStyle(nodeState.pos)}
-                    className={`node ${isCollapsed ? 'collapsed' : ''} ${isSelected ? 'selected' : ''}`}>
+                    className={`node ${isCollapsed ? 'collapsed' : ''} ${isSelected ? 'selected' : ''}${node.classNames ? ' ' + node.classNames.join(' ') : ''}`}>
                     <div
                         onDoubleClick={this.toggleExpandNode.bind(this, node.id)}
                         onMouseDown={this.onDragStarted.bind(this, node.id)}
@@ -743,12 +754,13 @@ export class Editor extends React.Component<Editor.Props, State> {
 
         this.props.nodes.push({ ...proto, id });
 
-        this.setState(state => {
-            state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
-            return { ...state };
-        });
         if (this.props.config.onChanged !== undefined)
             this.props.config.onChanged({ type: 'NodeCreated', id });
+        else
+            this.setState(state => {
+                state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
+                return { ...state };
+            });
     }
 
     onStartCreatingNewNode(type: string, factory: () => Node, pos: Vector2d, offset: Vector2d) {

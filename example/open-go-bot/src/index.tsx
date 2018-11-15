@@ -7,14 +7,13 @@ import { Provider, connect } from 'react-redux';
 import { configureStore } from './store';
 import * as Actions from './actions';
 
-require('./open-go-bot.scss');
+require('./redux.scss');
 
 import { Editor, Node, Config, MenuItem } from 'react-flow-editor';
 import { RootState } from './reducers';
 import { bindActionCreators } from 'redux';
 
 function resolver(payload: any): JSX.Element {
-    if (payload.type === '') return <h2 />;
     return (
         <div style={{ height: '200px', width: '200px' }}>{payload.h1}</div>
     );
@@ -38,7 +37,7 @@ interface Props {
 
 const render = (props: Props) =>
     <div>
-        <Editor config={config} nodes={props.state.nodes} />
+        <Editor config={{ ...config, onChanged: props.actions.editorUpdatesAction }} nodes={props.state.nodes} />
         <div className="menu">
             <button type="button" onClick={props.actions.loadAction} >Load</button>
             <button type="button" onClick={props.actions.clearAction} >Clear</button>

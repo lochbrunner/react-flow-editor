@@ -57,6 +57,30 @@ body {
     width: 100%;
 }
 
+.node.red {
+    border-color: #fdd;
+
+    >.header {
+        background-color: #fff7f7;
+    }
+}
+
+.node.green {
+    border-color: #dfd;
+
+    >.header {
+        background-color: #f7fff7;
+    }
+}
+
+.node.blue {
+    border-color: #ddf;
+
+    >.header {
+        background-color: #f7f7ff;
+    }
+}
+
 .menu {
     position: absolute;
     top: 0;

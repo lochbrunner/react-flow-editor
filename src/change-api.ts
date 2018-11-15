@@ -1,3 +1,5 @@
+import {Endpoint} from './editor';
+
 interface NodeRemoved {
   id: string;
   type: 'NodeRemoved';
@@ -6,6 +8,8 @@ interface NodeRemoved {
 interface ConnectionRemoved {
   id: string;
   type: 'ConnectionRemoved';
+  input: Endpoint;
+  output: Endpoint;
 }
 
 interface ConnectionCreated {
