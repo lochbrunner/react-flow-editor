@@ -87,3 +87,26 @@ body {
     bottom: 0;
     height: 20px;
 }
+
+.flow-menu {
+    position: absolute;
+    top: 30%;
+}
+
+.react-flow-creating-node,
+.react-flow-editor-menu-item {
+    &.red {
+        border-color: #fdd;
+        background-color: #fff7f7;
+    }
+
+    &.green {
+        border-color: #dfd;
+        background-color: #f7fff7;
+    }
+
+    &.blue {
+        border-color: #ddf;
+        background-color: #f7f7ff;
+    }
+}

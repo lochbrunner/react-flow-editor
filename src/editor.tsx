@@ -773,20 +773,28 @@ export class Editor extends React.Component<Editor.Props, State> {
         // const inputs = factory.inputs.map(input => ({ ...input }));
         // const outputs = template.outputs.map(output => ({ ...output }));
 
-        this.props.nodes.push({ ...proto, id });
+        // this.setState(state => {
+        //     state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
+        //     return { ...state };
+        // });
 
-        if (this.props.config.onChanged !== undefined)
-            this.props.config.onChanged({ type: 'NodeCreated', id });
-        else
+        if (this.props.config.onChanged !== undefined) {
+            this.state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
+            this.props.config.onChanged({ type: 'NodeCreated', node: { ...proto, id } });
+        }
+        else {
+            this.props.nodes.push({ ...proto, id });
             this.setState(state => {
                 state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
                 return { ...state };
             });
+        }
+
     }
 
-    onStartCreatingNewNode(type: string, factory: () => Node, pos: Vector2d, offset: Vector2d) {
+    onStartCreatingNewNode(type: string, factory: () => Node, pos: Vector2d, offset: Vector2d, classNames?: string[]) {
         const node = document.createElement('div');
-        node.className = 'node collapsed';
+        node.className = `node collapsed ${classNames ? classNames.join(' ') : ''}`;
         node.style.top = `${pos.y}px`;
         node.style.left = `${pos.x}px`;
         node.style.position = 'absolute';
@@ -800,6 +808,7 @@ export class Editor extends React.Component<Editor.Props, State> {
 
         const host = document.createElement('div');
         host.className = 'react-flow-creating-node';
+        console.log(`node.className: ${node.className}`);
         host.appendChild(node);
 
         document.body.appendChild(host);

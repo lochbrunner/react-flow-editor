@@ -15,7 +15,7 @@ import { bindActionCreators } from 'redux';
 
 function resolver(payload: any): JSX.Element {
     return (
-        <div style={{ height: '200px', width: '200px' }}>{payload.h1}</div>
+        <div style={{ height: '200px', width: '200px' }}></div>
     );
 }
 
@@ -34,6 +34,18 @@ interface Props {
     state: RootState;
 }
 
+const factory = (type: 'red' | 'green' | 'blue') => (): Node => ({
+    name: `${type} node`,
+    type,
+    id: '',
+    inputs: [{ connection: [], name: 'input 1' }],
+    outputs: [
+        { connection: [], name: 'output 1 ' }, { connection: [], name: 'output 2' }
+    ],
+    properties: { display: 'only-dots' },
+    classNames: [type]
+});
+
 const render = (props: Props) =>
     <div>
         <Editor config={{ ...config, onChanged: props.actions.editorUpdatesAction }} nodes={props.state.nodes} />
@@ -43,6 +55,11 @@ const render = (props: Props) =>
             <button type="button" onClick={props.actions.addAction} >Add</button>
             <button type="button" onClick={props.actions.changeAction} >Change</button>
             <button type="button" onClick={props.actions.removeAction} >Remove</button>
+        </div>
+        <div className="flow-menu">
+            <MenuItem classNames={['red']} name="red" nodeType="node-type-red" factory={factory('red')} />
+            <MenuItem classNames={['green']} name="green" nodeType="node-type-green" factory={factory('green')} />
+            <MenuItem classNames={['blue']} name="blue" nodeType="node-type-blue" factory={factory('blue')} />
         </div>
     </div>;
 

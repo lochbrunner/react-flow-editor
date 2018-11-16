@@ -9,7 +9,7 @@ export interface Node {
   name: string;
   type: string;
   id: string;
-  payload: any;
+  payload?: any;
   inputs: BaseInput[];
   outputs: BaseOutput[];
   position?: Vector2d;

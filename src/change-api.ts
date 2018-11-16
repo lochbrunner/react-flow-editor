@@ -1,4 +1,5 @@
 import {Endpoint} from './editor';
+import {Node} from './types';
 
 interface NodeRemoved {
   id: string;
@@ -19,7 +20,7 @@ interface ConnectionCreated {
 }
 
 interface NodeCreated {
-  id: string;
+  node: Node;
   type: 'NodeCreated';
 }
 

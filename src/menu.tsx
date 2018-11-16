@@ -8,6 +8,7 @@ export namespace MenuItem {
     export interface Props {
         nodeType: string;
         name: string;
+        classNames?: string[];
 
         factory: () => Node;
     }
@@ -32,7 +33,7 @@ export class MenuItem extends React.Component<MenuItem.Props, State> {
             const pos = this.offset;
             const offset = Vector2d.subtract({ x: e.clientX, y: e.clientY }, pos);
             if ((window as any).onStartCreatingNewNode)
-                (window as any).onStartCreatingNewNode(props.nodeType, props.factory, pos, offset);
+                (window as any).onStartCreatingNewNode(props.nodeType, props.factory, pos, offset, props.classNames);
             else console.warn('window.onStartCreatingNewNode does not exist!');
         }
     }
@@ -54,7 +55,7 @@ export class MenuItem extends React.Component<MenuItem.Props, State> {
     render() {
         return (
             <div ref={this.onMenuItemUpdate.bind(this)}
-                className="react-flow-editor-menu-item"
+                className={`react-flow-editor-menu-item ${this.props.classNames ? this.props.classNames.join(' ') : ''}`}
                 onMouseDown={this.onStartCreatingNewNode.bind(this)} >
                 <span>{this.props.name}</span>
             </div>

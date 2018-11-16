@@ -40,12 +40,14 @@ $collapse-animation-duration: 0.4s;
         border-radius: $border-radius-expanded;
         border: $node-border-width solid $node-border-color;
         box-sizing: content-box;
+        z-index: 0;
 
         transition: $node-transitions;
 
         &.selected {
             border: $node-border-width-selected solid $selected-color;
             margin: #{$node-border-width - $node-border-width-selected};
+            z-index: 1;
         }
 
         &.collapsed {
@@ -58,6 +60,8 @@ $collapse-animation-duration: 0.4s;
         }
 
         &:hover {
+            z-index: 1;
+
             &.selected {
                 border: $node-border-width-selected solid $selected-color;
                 margin: #{$node-border-width - $node-border-width-selected};
@@ -73,7 +77,7 @@ $collapse-animation-duration: 0.4s;
 
         >.header {
             border-bottom: $node-border-width solid $border-color;
-            min-width: 100px;
+            min-width: 120px;
             padding: 6px;
             text-align: center;
             cursor: grab;

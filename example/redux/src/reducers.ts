@@ -143,7 +143,7 @@ const loadMock = (): Node[] =>
     [{
       name: 'Node 1',
       id: 'node-1',
-      type: 'node-type-1 ',
+      type: 'node-type-red ',
       payload: {},
       inputs: [
         {connection: [], name: 'input 1'}, {connection: [], name: 'input 2'}
@@ -158,7 +158,7 @@ const loadMock = (): Node[] =>
      {
        name: 'Node 2',
        id: 'node-2',
-       type: 'node-type-1 ',
+       type: 'node-type-green ',
        payload: {},
        inputs: [{connection: [{nodeId: 'node-1', port: 0}], name: 'input 1'}],
        outputs: [
@@ -261,6 +261,7 @@ export const reducer: Reducer<RootState> =
           outputConnections.splice(outputConnectionIndex, 1);
 
         } else if (payload.type === 'NodeCreated') {
+          state.nodes.push(payload.node);
         } else if (payload.type === 'NodeRemoved') {
           const inputNode = state.nodes.findIndex(n => n.id === payload.id);
           state.nodes.splice(inputNode, 1);
