@@ -13,8 +13,8 @@ interface ConnectionRemoved {
 }
 
 interface ConnectionCreated {
-  input: {nodeId: string, connectionId: number};
-  output: {nodeId: string, connectionId: number};
+  input: {nodeId: string, port: number};
+  output: {nodeId: string, port: number};
   type: 'ConnectionCreated';
 }
 

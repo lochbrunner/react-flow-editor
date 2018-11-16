@@ -160,9 +160,9 @@ const loadMock = (): Node[] =>
        id: 'node-2',
        type: 'node-type-1 ',
        payload: {},
-       inputs: [{connection: [], name: 'input 1'}],
+       inputs: [{connection: [{nodeId: 'node-1', port: 0}], name: 'input 1'}],
        outputs: [
-         {connection: [{nodeId: 'node-1', port: 0}], name: 'output 1'},
+         {connection: [], name: 'output 1'},
          {connection: [], name: 'output 2 '}
        ],
        properties: {display: 'only-dots'},
@@ -226,40 +226,38 @@ export const reducer: Reducer<RootState> =
               state.nodes.findIndex(n => n.id === payload.output.nodeId);
           const outputConnection = {
             nodeId: payload.output.nodeId,
-            port: payload.output.connectionId
+            port: payload.output.port
           };
           const inputConnection = {
             nodeId: payload.input.nodeId,
-            port: payload.input.connectionId
+            port: payload.input.port
           };
-          (state.nodes[inputIndex]
-               .inputs[payload.input.connectionId]
-               .connection as Connection[])
+          (state.nodes[inputIndex].inputs[payload.input.port].connection as
+           Connection[])
               .push(outputConnection);
-          (state.nodes[outputIndex]
-               .outputs[payload.output.connectionId]
-               .connection as Connection[])
+          (state.nodes[outputIndex].outputs[payload.output.port].connection as
+           Connection[])
               .push(inputConnection);
         } else if (payload.type === 'ConnectionRemoved') {
           const inputNodeIndex =
               state.nodes.findIndex(n => n.id === payload.input.nodeId);
 
           const inputConnections = state.nodes[inputNodeIndex]
-                                       .inputs[payload.input.connectionId]
+                                       .inputs[payload.input.port]
                                        .connection as Connection[];
           const inputConnectionIndex = inputConnections.findIndex(
               s => s.nodeId === payload.output.nodeId &&
-                  s.port === payload.output.connectionId);
+                  s.port === payload.output.port);
           inputConnections.splice(inputConnectionIndex, 1);
 
           const outputNodeIndex =
               state.nodes.findIndex(n => n.id === payload.output.nodeId);
           const outputConnections = state.nodes[outputNodeIndex]
-                                        .outputs[payload.output.connectionId]
+                                        .outputs[payload.output.port]
                                         .connection as Connection[];
           const outputConnectionIndex = outputConnections.findIndex(
               s => s.nodeId === payload.input.nodeId &&
-                  s.port === payload.input.connectionId);
+                  s.port === payload.input.port);
           outputConnections.splice(outputConnectionIndex, 1);
 
         } else if (payload.type === 'NodeCreated') {

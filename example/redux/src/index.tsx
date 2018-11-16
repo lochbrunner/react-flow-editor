@@ -22,7 +22,6 @@ function resolver(payload: any): JSX.Element {
 const config: Config = {
     resolver,
     connectionType: 'bezier',
-    // onChanged,
     grid: false,
     direction: 'we',
     connectionAnchorsLength: 40

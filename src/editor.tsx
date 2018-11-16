@@ -12,7 +12,7 @@ const compareConnections = (a: Connection) => (b: Connection) => a.port === b.po
 
 export interface Config {
     resolver: (payload: any) => JSX.Element;
-    connectionValidator?: (output: { nodeId: string, connectionId: number }, input: { nodeId: string, connectionId: number }) => boolean;
+    connectionValidator?: (output: { nodeId: string, port: number }, input: { nodeId: string, port: number }) => boolean;
     onChanged?: (node: ChangeAction) => void;
     /**
      * Default is 'bezier'
@@ -65,30 +65,30 @@ type State = {
 
 export interface Endpoint {
     nodeId: string;
-    connectionId: number;
+    port: number;
     kind: 'input' | 'output';
     name?: string;
 }
 
 class EndpointImpl implements Endpoint {
     nodeId: string;
-    connectionId: number;
+    port: number;
     kind: 'input' | 'output';
     name?: string;
 
-    static computeId(nodeId: Endpoint['nodeId'], connectionId: Endpoint['connectionId'], kind: Endpoint['kind']) {
+    static computeId(nodeId: Endpoint['nodeId'], connectionId: Endpoint['port'], kind: Endpoint['kind']) {
         return `${nodeId}_${connectionId}_${kind}`;
     }
 
     static computeIdIn(conn: Endpoint) {
-        return `${conn.nodeId}_${conn.connectionId}_${conn.kind}`;
+        return `${conn.nodeId}_${conn.port}_${conn.kind}`;
     }
 
     static extractEndpointInfo(id: string): Endpoint {
         const regex = /(.+)_(\d+)_(input|output)/g;
         const match = regex.exec(id);
         if (match === null) throw Error(`Illegal id string ${id}`);
-        return { nodeId: match[1], connectionId: parseInt(match[2]), kind: match[3] as any };
+        return { nodeId: match[1], port: parseInt(match[2]), kind: match[3] as any };
     }
 }
 
@@ -221,7 +221,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                 const { endpoint } = this.currentAction;
                 const free = Vector2d.subtract(newPos, this.editorBoundingRect);
 
-                const key = EndpointImpl.computeId(endpoint.nodeId, endpoint.connectionId, endpoint.kind);
+                const key = EndpointImpl.computeId(endpoint.nodeId, endpoint.port, endpoint.kind);
 
                 const offset = this.state.connectionState.get(key);
                 const node = this.state.nodesState.get(endpoint.nodeId);
@@ -246,6 +246,7 @@ export class Editor extends React.Component<Editor.Props, State> {
     }
 
     private onCreateConnectionStarted(endpoint: Endpoint, e: React.MouseEvent<HTMLElement>) {
+        e.stopPropagation();
         this.currentAction = { lastPos: { x: e.screenX, y: e.screenY }, endpoint, type: 'connection' };
     }
 
@@ -285,10 +286,10 @@ export class Editor extends React.Component<Editor.Props, State> {
         const inputNode = nodes.find(node => node.id === input.nodeId);
         const outputNode = nodes.find(node => node.id === output.nodeId);
 
-        inputNode.inputs[input.connectionId].connection =
-            this.removeFromArrayOrValue(inputNode.inputs[input.connectionId].connection, { nodeId: output.nodeId, port: output.connectionId });
-        outputNode.outputs[output.connectionId].connection =
-            this.removeFromArrayOrValue(outputNode.outputs[output.connectionId].connection, { nodeId: input.nodeId, port: input.connectionId });
+        inputNode.inputs[input.port].connection =
+            this.removeFromArrayOrValue(inputNode.inputs[input.port].connection, { nodeId: output.nodeId, port: output.port });
+        outputNode.outputs[output.port].connection =
+            this.removeFromArrayOrValue(outputNode.outputs[output.port].connection, { nodeId: input.nodeId, port: input.port });
     }
 
     private createConnection(input: Endpoint, output: Endpoint) {
@@ -305,7 +306,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             return;
         }
 
-        if (!isArrayOrUndefined(inputNode.inputs[input.connectionId].connection) || !isArrayOrUndefined(outputNode.outputs[output.connectionId].connection)) {
+        if (!isArrayOrUndefined(inputNode.inputs[input.port].connection) || !isArrayOrUndefined(outputNode.outputs[output.port].connection)) {
             // Connections already exist
             return;
         }
@@ -317,17 +318,17 @@ export class Editor extends React.Component<Editor.Props, State> {
         if (config.onChanged !== undefined) {
             config.onChanged({ type: 'ConnectionCreated', input, output });
         } else {
-            const outputConnection = { nodeId: outputNode.id, port: output.connectionId };
-            if (Array.isArray(inputNode.inputs[input.connectionId].connection))
-                (inputNode.inputs[input.connectionId].connection as Connection[]).push(outputConnection);
+            const outputConnection = { nodeId: outputNode.id, port: output.port };
+            if (Array.isArray(inputNode.inputs[input.port].connection))
+                (inputNode.inputs[input.port].connection as Connection[]).push(outputConnection);
             else
-                inputNode.inputs[input.connectionId].connection = outputConnection;
+                inputNode.inputs[input.port].connection = outputConnection;
 
-            const inputConnection = { nodeId: inputNode.id, port: input.connectionId };
-            if (Array.isArray(outputNode.outputs[output.connectionId].connection))
-                (outputNode.outputs[output.connectionId].connection as Connection[]).push(inputConnection);
+            const inputConnection = { nodeId: inputNode.id, port: input.port };
+            if (Array.isArray(outputNode.outputs[output.port].connection))
+                (outputNode.outputs[output.port].connection as Connection[]).push(inputConnection);
             else
-                outputNode.outputs[output.connectionId].connection = inputConnection;
+                outputNode.outputs[output.port].connection = inputConnection;
 
             this.setState(state => state);
         }
@@ -420,7 +421,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         if (!element) return;
         // Only save relative position
         const parentPos = this.state.nodesState.get(conn.nodeId).pos;
-        const key = EndpointImpl.computeId(conn.nodeId, conn.connectionId, conn.kind);
+        const key = EndpointImpl.computeId(conn.nodeId, conn.port, conn.kind);
         const cached = this.endpointCache.get(key);
         const newDomRect: DOMRect = element.getBoundingClientRect() as DOMRect;
         const globalOffset: Vector2d = this.editorBoundingRect || { x: 0, y: 0 };
@@ -452,12 +453,23 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     private connection(outputConn: Endpoint, inputConn: Endpoint) {
         const { nodesState, connectionState } = this.state;
-        const inputKey = EndpointImpl.computeId(inputConn.nodeId, inputConn.connectionId, inputConn.kind);
-        const outputKey = EndpointImpl.computeId(outputConn.nodeId, outputConn.connectionId, outputConn.kind);
+        const inputKey = EndpointImpl.computeId(inputConn.nodeId, inputConn.port, inputConn.kind);
+        const outputKey = EndpointImpl.computeId(outputConn.nodeId, outputConn.port, outputConn.kind);
         const key = `${outputKey}_${inputKey}`;
         const connId = computeConnectionId(inputConn, outputConn);
         const isSelected = this.state.selection && this.state.selection.id === connId;
 
+        if (!connectionState.has(inputKey)) {
+            // This connection seems to be created outside the editor
+            // Therefor dont render it yet
+            return '';
+        }
+
+        if (!connectionState.has(outputKey)) {
+            // This connection seems to be created outside the editor
+            // Therefor dont render it yet
+            return '';
+        }
         const outputOffset = connectionState.get(outputKey);
         const inputOffset = connectionState.get(inputKey);
         const outputNode = nodesState.get(outputConn.nodeId);
@@ -522,8 +534,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             if (node.properties !== undefined && node.properties.display === 'only-dots') {
                 const dot = (kind: Endpoint['kind'], total: number) =>
                     (prop: BaseConnection, index: number) => {
-                        // (conn: Endpoint, name: string, index: number) => {
-                        const conn: Endpoint = { nodeId: node.id, connectionId: index, kind: kind };
+                        const conn: Endpoint = { nodeId: node.id, port: index, kind: kind };
                         const site = dirMapping[kind];
                         const style = site === 'right' ? { right: '7px' } : {};
                         return (
@@ -554,7 +565,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                     return (
                         <div key={key}>
                             {prop.renderer ? prop.renderer(prop) : prop.name}
-                            {dot({ nodeId: node.id, connectionId: index, kind: kind }, prop.name)}
+                            {dot({ nodeId: node.id, port: index, kind: kind }, prop.name)}
                         </div>
                     );
                 };
@@ -595,7 +606,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             };
             const mapProp = (kind: Endpoint['kind'], size: number) => (prop: BaseConnection, i: number) => {
                 const key = EndpointImpl.computeId(node.id, i, kind);
-                return dot({ nodeId: node.id, connectionId: i, kind: kind }, key, i, size);
+                return dot({ nodeId: node.id, port: i, kind: kind }, key, i, size);
             };
 
             const inputs = <div key={node.id + 'inputs'} className={`connections ${dirMapping['input']}`}>{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
@@ -613,13 +624,19 @@ export class Editor extends React.Component<Editor.Props, State> {
             const { isCollapsed } = nodeState;
             const isSelected = this.state.selection && this.state.selection.id === node.id;
             return (
-                <div onClick={this.select.bind(this, 'node', node.id)} key={node.id} style={nodeStyle(nodeState.pos)}
+                <div
+                    onClick={this.select.bind(this, 'node', node.id)}
+                    key={node.id}
+                    style={nodeStyle(nodeState.pos)}
                     className={`node ${isCollapsed ? 'collapsed' : ''} ${isSelected ? 'selected' : ''}${node.classNames ? ' ' + node.classNames.join(' ') : ''}`}>
                     <div
-                        onDoubleClick={this.toggleExpandNode.bind(this, node.id)}
                         onMouseDown={this.onDragStarted.bind(this, node.id)}
+                        onDoubleClick={this.toggleExpandNode.bind(this, node.id)}
                         className="header" >
-                        <div className="expander" >
+                        <div className="expander"
+                            onClick={this.toggleExpandNode.bind(this, node.id)}
+                            onMouseDown={e => e.stopPropagation()}
+                        >
                             <div className={`icon ${isCollapsed ? 'arrow-down' : 'arrow-right'}`} />
                         </div>
                         <span>{node.name}</span>
@@ -642,14 +659,18 @@ export class Editor extends React.Component<Editor.Props, State> {
                 if (input.connection === undefined) continue;
                 if (Array.isArray(input.connection)) {
                     for (let conn of input.connection) {
-                        const inputConn: Endpoint = { nodeId: node.id, connectionId: i, kind: 'input' };
-                        const outputConn: Endpoint = { nodeId: conn.nodeId, connectionId: conn.port, kind: 'output' };
+                        // Is the opponent node available?
+                        if (props.nodes.findIndex(n => n.id === conn.nodeId) < 0) continue;
+
+                        const inputConn: Endpoint = { nodeId: node.id, port: i, kind: 'input' };
+                        const outputConn: Endpoint = { nodeId: conn.nodeId, port: conn.port, kind: 'output' };
                         connections.push({ in: inputConn, out: outputConn });
                     }
                 }
                 else {
-                    const inputConn: Endpoint = { nodeId: node.id, connectionId: i, kind: 'input' };
-                    const outputConn: Endpoint = { nodeId: input.connection.nodeId, connectionId: input.connection.port, kind: 'output' };
+                    if (props.nodes.findIndex(n => n.id === (input.connection as Connection).nodeId) < 0) continue;
+                    const inputConn: Endpoint = { nodeId: node.id, port: i, kind: 'input' };
+                    const outputConn: Endpoint = { nodeId: input.connection.nodeId, port: input.connection.port, kind: 'output' };
                     connections.push({ in: inputConn, out: outputConn });
                 }
                 ++i;

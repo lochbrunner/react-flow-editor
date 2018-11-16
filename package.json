@@ -20,7 +20,7 @@
         "build": "npm run style && npm run compile",
         "style": "copyfiles -u 1 ./src/*.scss ./dist/",
         "lint": "tslint ./{src}/**/*.{ts,tsx}",
-        "refresh": " rm -rf ./example/open-go-bot/node_modules/react-flow-editor/dist && cp -r ./dist ./example/open-go-bot/node_modules/react-flow-editor/dist"
+        "refresh": " rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist"
     },
     "dependencies": {
         "lodash": "^4.17.10"
