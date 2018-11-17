@@ -15,3 +15,5 @@ It was designed for [open go bot](https://github.com/lochbrunner/open-go-bot)
 * Fix positioning of ports when collapsed
 * Used defined classes to nodes :heavy_check_mark:
 * Prevent event bubbling on the header :heavy_check_mark:
+
+[Try this example in your browser!](https://lochbrunner.github.io/react-flow-editor/redux/index.html)

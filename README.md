@@ -10,6 +10,8 @@ An ui library for creating flow based editors with react and typescript/javascri
 
 Try the [demo](https://lochbrunner.github.io/react-flow-editor/simple) in your browser.
 
+If you are interested in redux dive into the [example](./example/redux/) or try the more advanced [demo](https://lochbrunner.github.io/react-flow-editor/redux/index.html).
+
 ## Getting started
 
 ```typescript
@@ -20,6 +22,7 @@ import { Editor, Node, Config} from 'react-flow-editor';
 const nodes: Node[] = [
     {
         id: 'Node 1',
+        name: 'First Node',
         payload: { h1: 'hello' },
         inputs: [{
             connection: [], name: 'input 1'
@@ -38,7 +41,8 @@ function resolver(payload: any): JSX.Element {
 const config: Config = {
     resolver,
     connectionType: 'bezier',
-    showGrid: true
+    grid: true,
+    demoMode: true,
 };
 
 ReactDOM.render(
@@ -66,24 +70,55 @@ The config interface looks as follow
 ```typescript
 export interface Config {
     resolver: (payload: any) => JSX.Element;
-    connectionValidator?: (output: { nodeId: string, connectionId: number }, input: { nodeId: string, connectionId: number }) => boolean;
+    connectionValidator?: (output: { nodeId: string, port: number }, input: { nodeId: string, port: number }) => boolean;
     onChanged?: (node: ChangeAction) => void;
     connectionType?: 'bezier' | 'linear';
     grid?: boolean | { size: number };
     connectionAnchorsLength?: number;
     direction?: 'ew' | 'we';
+    demoMode?: boolean;
 }
 ```
 
 Property | Description
 --- | ---
-resolver | A function returning a React component which gets placed into the node
-connectionValidator | A function which evaluates if a possible connection might be valid or not
-onChanged | A callback which gets called when the flow graph changed
-connectionType | The geometry type of the connection lines between the nodes
-grid | Specifies if the grid should be rendered or not (Default is `true`). Optional specifies distances between the lines (`size`). Default is 18.
-connectionAnchorsLength | Specifies the langth of the anker when using `bezier` as `connectionType`.
-direction | Specifies the orientation of the input and output ports. Default is `we`.
+`resolver` | A function returning a React component which gets placed into the node
+`connectionValidator` | A function which evaluates if a possible connection might be valid or not
+`onChanged` | A callback which gets called when the flow graph changed
+`connectionType` | The geometry type of the connection lines between the nodes
+`grid` | Specifies if the grid should be rendered or not (Default is `true`). Optional specifies distances between the lines (`size`). Default is 18.
+`connectionAnchorsLength` | Specifies the langth of the anker when using `bezier` as `connectionType`.
+`direction` | Specifies the orientation of the input and output ports. Default is `we`.
+`demoMode` | If this set to true, the Editor takes care of updating the nodes in the props. Be carful using this in production.
+
+### Nodes
+
+A node is specified by the following interface
+
+```typescript
+export interface Node {
+  name: string;
+  type: string;
+  id: string;
+  inputs: BaseInput[];
+  outputs: BaseOutput[];
+  payload?: any;
+  position?: Vector2d;
+  properties?: {display: 'stacked' | 'only-dots'};
+  classNames?: string[];
+}
+```
+
+For now `BaseInput` and `BaseOutput` are identically to the `BaseConnection` interface:
+
+```typescript
+export interface BaseConnection {
+  name: string;
+  connection?: Connection|Connection[];
+  payload?: any;
+  renderer?: (connection: BaseConnection) => JSX.Element;
+}
+```
 
 ### Themes
 
