@@ -57,9 +57,9 @@ const render = (props: Props) =>
             <button type="button" onClick={props.actions.removeAction} >Remove</button>
         </div>
         <div className="flow-menu">
-            <MenuItem classNames={['red']} name="red" nodeType="node-type-red" factory={factory('red')} />
-            <MenuItem classNames={['green']} name="green" nodeType="node-type-green" factory={factory('green')} />
-            <MenuItem classNames={['blue']} name="blue" nodeType="node-type-blue" factory={factory('blue')} />
+            <MenuItem classNames={['red']} name="red node" factory={factory('red')} />
+            <MenuItem classNames={['green']} name="green node" factory={factory('green')} />
+            <MenuItem classNames={['blue']} name="blue node" factory={factory('blue')} />
         </div>
     </div>;
 

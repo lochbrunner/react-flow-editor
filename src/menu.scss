@@ -14,7 +14,7 @@
     background-color: $node-background-color;
 
     &:hover {
-        border: $node-border-color solid $selected-color;
+        border: $node-border-width solid $selected-color;
         background-color: #fff;
     }
 }

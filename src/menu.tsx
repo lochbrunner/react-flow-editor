@@ -6,8 +6,8 @@ import { Node } from './types';
 export namespace MenuItem {
 
     export interface Props {
-        nodeType: string;
         name: string;
+        nodeName?: string;
         classNames?: string[];
 
         factory: () => Node;
@@ -33,7 +33,7 @@ export class MenuItem extends React.Component<MenuItem.Props, State> {
             const pos = this.offset;
             const offset = Vector2d.subtract({ x: e.clientX, y: e.clientY }, pos);
             if ((window as any).onStartCreatingNewNode)
-                (window as any).onStartCreatingNewNode(props.nodeType, props.factory, pos, offset, props.classNames);
+                (window as any).onStartCreatingNewNode(props.nodeName ? props.nodeName : props.name, props.factory, pos, offset, props.classNames);
             else console.warn('window.onStartCreatingNewNode does not exist!');
         }
     }

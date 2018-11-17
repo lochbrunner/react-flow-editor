@@ -1,5 +1,5 @@
-@import "react-flow-editor/dist/default-theme.scss";
-@import "react-flow-editor/dist/style";
+@import "./node_modules/react-flow-editor/dist/default-theme.scss";
+@import "./node_modules/react-flow-editor/dist/style.scss";
 $menu-width:150px;
 $log-height:60px;
 $border-color: #ddd;

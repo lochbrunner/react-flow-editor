@@ -102,9 +102,9 @@ const onChanged: Config['onChanged'] = data => {
     else if (data.type === 'NodeRemoved')
         log(`Node '${data.id}' was removed.`);
     else if (data.type === 'NodeCreated')
-        log(`Node '${data.id}' was created.`);
+        log(`Node '${data.node.id}' was created.`);
     else if (data.type === 'ConnectionCreated') {
-        log(`New connection between nodes '${data.input.nodeId}' [${data.input.connectionId}]  and '${data.output.nodeId}' [${data.output.connectionId}] created.`);
+        log(`New connection between nodes '${data.input.nodeId}' [${data.input.port}]  and '${data.output.nodeId}' [${data.output.port}] created.`);
     }
 };
 
@@ -113,15 +113,16 @@ const config: Config = {
     connectionType: 'bezier',
     onChanged,
     grid: true,
+    demoMode: true,
     direction: 'we'
 };
 
 ReactDOM.render(
     <div>
         <div className="flow-menu">
-            <MenuItem name="Node Type 1" nodeType="Node_1" factory={node1Factory} />
-            <MenuItem name="Node Type 2" nodeType="Node_2" factory={node2Factory} />
-            <MenuItem name="Node Type 3" nodeType="Node_3" factory={node3Factory} />
+            <MenuItem name="Node Type 1" factory={node1Factory} />
+            <MenuItem name="Node Type 2" factory={node2Factory} />
+            <MenuItem name="Node Type 3" factory={node3Factory} />
         </div>
         <Log subscribe={update => log = update} />
         <Editor config={config} nodes={nodes} />

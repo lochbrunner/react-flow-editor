@@ -90,7 +90,11 @@ body {
 
 .flow-menu {
     position: absolute;
-    top: 30%;
+    top: 10%;
+    left: 7px;
+    padding: 20px 3px;
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 10px 0px;
+    background: #fff;
 }
 
 .react-flow-creating-node,

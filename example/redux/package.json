@@ -1,5 +1,5 @@
 {
-  "name": "demo-for-open-go-bot",
+  "name": "react-flow-editor--redux-demo",
   "version": "0.0.0",
   "description": "Demo for open go bot",
   "scripts": {
@@ -10,9 +10,9 @@
   "author": "Matthias Lochbrunner",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/lochbrunner/open-go-bot/issues"
+    "url": "https://github.com/lochbrunner/react-flow-editor/issues"
   },
-  "homepage": "https://github.com/lochbrunner/open-go-bot#readme",
+  "homepage": "https://github.com/lochbrunner/react-flow-editor#readme",
   "devDependencies": {
     "@types/lodash": "^4.14.85",
     "@types/react": "15.6.19",
@@ -41,10 +41,10 @@
     "typescript": "^2.6.1",
     "url-loader": "^0.6.2",
     "webpack": "^3.8.1",
+    "bootstrap-sass": "^3.3.7",
     "webpack-dev-server": "^2.9.4"
   },
   "dependencies": {
-    "bootstrap-sass": "^3.3.7",
     "lodash": "^4.17.4",
     "react": "^15.6.1",
     "react-bootstrap": "^0.31.5",

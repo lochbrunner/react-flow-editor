@@ -4,18 +4,18 @@
   "description": "Example for react-flow-editor",
   "scripts": {
     "start": "webpack-dev-server --debug --devtool cheap-module-source-map --output-pathinfo --history-api-fallback --hot --inline --progress --colors --port 3001 --open",
-    "lint": "tslint *.{ts,tsx}",
-    "build": "webpack"
+    "build": "webpack -p",
+    "lint": "tslint *.{ts,tsx}"
   },
   "author": "Matthias Lochbrunner",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/lochbrunner/eact-flow-editor/issues"
+    "url": "https://github.com/lochbrunner/react-flow-editor/issues"
   },
-  "homepage": "https://github.com/lochbrunner/eact-flow-editor#readme",
+  "homepage": "https://github.com/lochbrunner/react-flow-editor#readme",
   "devDependencies": {
-    "@types/react": "^16.0.24",
-    "@types/react-dom": "^16.0.3",
+    "@types/react": "15.6.19",
+    "@types/react-dom": "^15.5.6",
     "@types/tapable": "^0.2.5",
     "@types/webpack": "^3.8.1",
     "@types/webpack-env": "^1.13.2",
@@ -35,11 +35,13 @@
     "typescript": "^2.6.1",
     "url-loader": "^0.6.2",
     "webpack": "^3.8.1",
-    "webpack-dev-server": "^2.9.4",
-    "react-flow-editor": "file:../../"
+    "webpack-dev-server": "^2.9.4"
   },
   "dependencies": {
     "react": "^15.6.1",
     "react-dom": "^15.6.1"
+  },
+  "resolutions": {
+    "@types/react": "15.6.19"
   }
 }

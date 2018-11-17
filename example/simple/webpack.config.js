@@ -5,7 +5,7 @@ var path = require('path');
 var isProduction = process.argv.indexOf('-p') >= 0;
 var sourcePath = path.join(__dirname, '.');
 var dataPath = path.join(__dirname, './data');
-var outPath = path.join(__dirname, '../docs/simple');
+var outPath = path.join(__dirname, '../../docs/simple');
 
 // plugins
 var HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -57,10 +57,7 @@ module.exports = {
           use: [{
             loader: 'css-loader'
           }, {
-            loader: 'sass-loader',
-            options: {
-              'includePaths': ['node_modules']
-            }
+            loader: 'sass-loader'
           }],
           // use style-loader in development
           fallback: 'style-loader'
@@ -113,7 +110,8 @@ module.exports = {
     }),
     new HtmlWebpackPlugin({
       template: 'index.html'
-    }), extractSass
+    }),
+    extractSass
   ],
   devtool: 'eval-source-map',
   devServer: {
@@ -128,8 +126,5 @@ module.exports = {
     // https://github.com/webpack/webpack-dev-server/issues/60#issuecomment-103411179
     fs: 'empty',
     net: 'empty'
-  },
-  resolve: {
-    modules: ['node_modules']
   }
 };

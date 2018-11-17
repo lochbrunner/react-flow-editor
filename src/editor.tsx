@@ -15,6 +15,10 @@ export interface Config {
     connectionValidator?: (output: { nodeId: string, port: number }, input: { nodeId: string, port: number }) => boolean;
     onChanged?: (node: ChangeAction) => void;
     /**
+     * If this is set, the editor will change the props.
+     */
+    demoMode?: boolean;
+    /**
      * Default is 'bezier'
      */
     connectionType?: 'bezier' | 'linear';
@@ -317,7 +321,8 @@ export class Editor extends React.Component<Editor.Props, State> {
         }
         if (config.onChanged !== undefined) {
             config.onChanged({ type: 'ConnectionCreated', input, output });
-        } else {
+        }
+        if (config.demoMode || config.onChanged === undefined) {
             const outputConnection = { nodeId: outputNode.id, port: output.port };
             if (Array.isArray(inputNode.inputs[input.port].connection))
                 (inputNode.inputs[input.port].connection as Connection[]).push(outputConnection);
@@ -340,12 +345,13 @@ export class Editor extends React.Component<Editor.Props, State> {
         const { selection } = this.state;
         if (e.keyCode === KEY_CODE_DELETE) {
             if (selection) {
+                const { config } = this.props;
                 if (selection.type === 'connection') {
                     const { input, output } = extractConnectionFromId(selection.id);
 
-                    if (this.props.config.onChanged)
-                        this.props.config.onChanged({ input, output, type: 'ConnectionRemoved', id: selection.id });
-                    else this.removeConnection(input, output);
+                    if (config.onChanged !== undefined)
+                        config.onChanged({ input, output, type: 'ConnectionRemoved', id: selection.id });
+                    if (config.onChanged === undefined || config.demoMode) this.removeConnection(input, output);
                 }
                 else if (selection.type === 'node') {
                     const index = this.props.nodes.findIndex(node => node.id === selection.id);
@@ -375,9 +381,9 @@ export class Editor extends React.Component<Editor.Props, State> {
                         }
                     }
 
-                    if (this.props.config.onChanged)
-                        this.props.config.onChanged({ type: 'NodeRemoved', id: selection.id });
-                    else
+                    if (config.onChanged !== undefined)
+                        config.onChanged({ type: 'NodeRemoved', id: selection.id });
+                    if (config.onChanged === undefined || config.demoMode)
                         this.props.nodes.splice(index, 1);
                 }
 
@@ -741,7 +747,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         );
     }
 
-    createNewNode(type: string, factory: () => Node, pos: Vector2d) {
+    createNewNode(name: string, factory: () => Node, pos: Vector2d) {
 
         const isInRange = (min: number, size: number, value: number) =>
             min <= value && (min + size) >= value;
@@ -765,24 +771,20 @@ export class Editor extends React.Component<Editor.Props, State> {
                 .reduce((p, c) => p + c, '');
         };
 
-        const id = `${type}_${createHash()}`;
-        // const name = type;
         const proto = factory();
+        const id = `${proto.type}_${createHash()}`;
+        // const name = type;
 
         // Make deep (enough) copy
         // const inputs = factory.inputs.map(input => ({ ...input }));
         // const outputs = template.outputs.map(output => ({ ...output }));
 
-        // this.setState(state => {
-        //     state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
-        //     return { ...state };
-        // });
-
-        if (this.props.config.onChanged !== undefined) {
+        const { config } = this.props;
+        if (config.onChanged !== undefined) {
             this.state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
-            this.props.config.onChanged({ type: 'NodeCreated', node: { ...proto, id } });
+            config.onChanged({ type: 'NodeCreated', node: { ...proto, id } });
         }
-        else {
+        if (config.demoMode || config.onChanged === undefined) {
             this.props.nodes.push({ ...proto, id });
             this.setState(state => {
                 state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
@@ -792,7 +794,7 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     }
 
-    onStartCreatingNewNode(type: string, factory: () => Node, pos: Vector2d, offset: Vector2d, classNames?: string[]) {
+    onStartCreatingNewNode(name: string, factory: () => Node, pos: Vector2d, offset: Vector2d, classNames?: string[]) {
         const node = document.createElement('div');
         node.className = `node collapsed ${classNames ? classNames.join(' ') : ''}`;
         node.style.top = `${pos.y}px`;
@@ -800,7 +802,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         node.style.position = 'absolute';
 
         const title = document.createElement('span');
-        title.innerHTML = type;
+        title.innerHTML = name;
         const header = document.createElement('div');
         header.className = 'header';
         header.appendChild(title);
@@ -819,7 +821,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             document.body.removeEventListener('mouseup', onFinishCreatingNewNode);
             document.body.removeEventListener('mouseleave', onFinishCreatingNewNode);
             document.body.removeEventListener('mousemove', onMove);
-            this.createNewNode(type, factory, Vector2d.floor({ x: nodeRect.left, y: nodeRect.top }));
+            this.createNewNode(name, factory, Vector2d.floor({ x: nodeRect.left, y: nodeRect.top }));
         };
 
         const onMove = (e: MouseEvent) => {
