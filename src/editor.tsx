@@ -1,37 +1,15 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 
-import { ChangeAction } from './change-api';
 import { Vector2d, Rect } from './geometry';
 import { BUTTON_LEFT, KEY_CODE_DELETE, BUTTON_MIDDLE } from './constants';
-import { Connection, BaseInput, BaseOutput, Size, BaseConnection, Node } from './types';
+import { Connection, InputPort, OutputPort, Size, Port, Node, Config } from './types';
+
+declare function setImmediate(func: () => void);
 
 //#region "Type definitions"
 
 const compareConnections = (a: Connection) => (b: Connection) => a.port === b.port && a.nodeId === b.nodeId;
-
-export interface Config {
-    resolver: (payload: any) => JSX.Element;
-    connectionValidator?: (output: { nodeId: string, port: number }, input: { nodeId: string, port: number }) => boolean;
-    onChanged?: (node: ChangeAction) => void;
-    /**
-     * If this is set, the editor will change the props.
-     */
-    demoMode?: boolean;
-    /**
-     * Default is 'bezier'
-     */
-    connectionType?: 'bezier' | 'linear';
-    /**
-     * Default is true. Which results in a grid.size of 18
-     */
-    grid?: boolean | { size: number };
-    connectionAnchorsLength?: number;
-    /**
-     * Default is 'we'
-     */
-    direction?: 'ew' | 'we';
-}
 
 export namespace Editor {
     export interface Props {
@@ -71,6 +49,7 @@ export interface Endpoint {
     nodeId: string;
     port: number;
     kind: 'input' | 'output';
+    additionalClassName?: string[];
     name?: string;
 }
 
@@ -79,6 +58,7 @@ class EndpointImpl implements Endpoint {
     port: number;
     kind: 'input' | 'output';
     name?: string;
+    additionalClassName?: string[];
 
     static computeId(nodeId: Endpoint['nodeId'], connectionId: Endpoint['port'], kind: Endpoint['kind']) {
         return `${nodeId}_${connectionId}_${kind}`;
@@ -119,7 +99,7 @@ function isEmptyArrayOrUndefined(obj) {
 
 const nodeIdPredicate = (connection: Connection | Connection[]) => (node: Node) => Array.isArray(connection) ? connection.findIndex(conn => conn.nodeId === node.id) >= 0 : node.id === connection.nodeId;
 
-const epPredicate = (nodeId: string, port?: number) => (ep: BaseConnection) => {
+const epPredicate = (nodeId: string, port?: number) => (ep: Port) => {
     const comp = (testee: Connection) => (port === undefined || testee.port === port) && testee.nodeId === nodeId;
     return Array.isArray(ep.connection) ? ep.connection.findIndex(comp) >= 0 : comp(ep.connection);
 };
@@ -195,10 +175,18 @@ export class Editor extends React.Component<Editor.Props, State> {
     }
 
     private toggleExpandNode(id: string) {
-        this.setState(state => {
-            state.nodesState.get(id).isCollapsed = !state.nodesState.get(id).isCollapsed;
-            return { ...state };
-        });
+        const node = this.props.nodes.find(n => n.id === id);
+        const desiredState = node.isCollapsed !== undefined ? !node.isCollapsed : !this.state.nodesState.get(id).isCollapsed;
+        const updateState = () =>
+            this.setState(state => {
+                state.nodesState.get(id).isCollapsed = desiredState;
+                return { ...state };
+            });
+        const { config } = this.props;
+        if (config.onChanged)
+            config.onChanged({ type: 'NodeCollapseChanged', id, shouldBeCollapsed: desiredState }, updateState);
+        if (config.onChanged === undefined || config.demoMode)
+            updateState();
     }
 
     private onDragStarted(id: string, e: React.MouseEvent<HTMLElement>) {
@@ -319,10 +307,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             // User validation not passed
             return;
         }
-        if (config.onChanged !== undefined) {
-            config.onChanged({ type: 'ConnectionCreated', input, output });
-        }
-        if (config.demoMode || config.onChanged === undefined) {
+        const updateProps = () => {
             const outputConnection = { nodeId: outputNode.id, port: output.port };
             if (Array.isArray(inputNode.inputs[input.port].connection))
                 (inputNode.inputs[input.port].connection as Connection[]).push(outputConnection);
@@ -336,6 +321,12 @@ export class Editor extends React.Component<Editor.Props, State> {
                 outputNode.outputs[output.port].connection = inputConnection;
 
             this.setState(state => state);
+        };
+        if (config.onChanged !== undefined) {
+            config.onChanged({ type: 'ConnectionCreated', input, output }, updateProps);
+        }
+        if (config.demoMode || config.onChanged === undefined) {
+            updateProps();
         }
     }
 
@@ -348,10 +339,10 @@ export class Editor extends React.Component<Editor.Props, State> {
                 const { config } = this.props;
                 if (selection.type === 'connection') {
                     const { input, output } = extractConnectionFromId(selection.id);
-
+                    const updateProps = () => { this.removeConnection(input, output); };
                     if (config.onChanged !== undefined)
-                        config.onChanged({ input, output, type: 'ConnectionRemoved', id: selection.id });
-                    if (config.onChanged === undefined || config.demoMode) this.removeConnection(input, output);
+                        config.onChanged({ input, output, type: 'ConnectionRemoved', id: selection.id }, updateProps);
+                    if (config.onChanged === undefined || config.demoMode) updateProps;
                 }
                 else if (selection.type === 'node') {
                     const index = this.props.nodes.findIndex(node => node.id === selection.id);
@@ -381,10 +372,11 @@ export class Editor extends React.Component<Editor.Props, State> {
                         }
                     }
 
+                    const updateProps = () => { this.props.nodes.splice(index, 1); };
                     if (config.onChanged !== undefined)
-                        config.onChanged({ type: 'NodeRemoved', id: selection.id });
+                        config.onChanged({ type: 'NodeRemoved', id: selection.id }, updateProps);
                     if (config.onChanged === undefined || config.demoMode)
-                        this.props.nodes.splice(index, 1);
+                        updateProps;
                 }
 
                 this.setState((state) => {
@@ -483,15 +475,16 @@ export class Editor extends React.Component<Editor.Props, State> {
 
         const output = Vector2d.add(outputOffset, outputNode.pos);
         const input = Vector2d.add(inputOffset, inputNode.pos);
-
-        return this.connectionPath(output, input, isSelected, key, this.select.bind(this, 'connection', connId));
+        const additionalClassNames = [...(outputConn.additionalClassName || []), ...(inputConn.additionalClassName || [])];
+        return this.connectionPath(output, input, additionalClassNames, isSelected, key, this.select.bind(this, 'connection', connId));
     }
 
-    private connectionPath(output: Vector2d, input: Vector2d, selected?: boolean, key?: string, onClick?: (e: React.MouseEvent<SVGPathElement>) => void) {
+    private connectionPath(output: Vector2d, input: Vector2d, additionalClassNames?: string[], selected?: boolean, key?: string, onClick?: (e: React.MouseEvent<SVGPathElement>) => void) {
         const a0 = output;
         const a3 = input;
         const anchorLength = this.props.config.connectionAnchorsLength || 100;
         const dir = this.props.config.direction || 'we';
+        // TODO: Anchor length depends on y distance as well
         const dx = Math.max(Math.abs(a0.x - a3.x) / 1.5, anchorLength) * (dir === 'we' ? 1 : -1);
         const a1 = { x: a0.x - dx, y: a0.y };
         const a2 = { x: a3.x + dx, y: a3.y };
@@ -504,8 +497,9 @@ export class Editor extends React.Component<Editor.Props, State> {
             cmd = `M ${a0.x} ${a0.y} L ${a3.x} ${a3.y}`;
 
         const width = 3 * this.state.transformation.zoom;
+        const composedAdditionalClassName = (selected ? 'connection selected' : 'connection') + ` ${(additionalClassNames || []).join(' ')}`;
 
-        return <path className={selected ? 'connection selected' : 'connection'} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} />;
+        return <path className={composedAdditionalClassName} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} />;
     }
 
     private onEditorUpdate(element: Element) {
@@ -539,7 +533,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         const properties = (node: Node) => {
             if (node.properties !== undefined && node.properties.display === 'only-dots') {
                 const dot = (kind: Endpoint['kind'], total: number) =>
-                    (prop: BaseConnection, index: number) => {
+                    (prop: Port, index: number) => {
                         const conn: Endpoint = { nodeId: node.id, port: index, kind: kind };
                         const site = dirMapping[kind];
                         const style = site === 'right' ? { right: '7px' } : {};
@@ -566,7 +560,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                         className={`dot ${conn.kind} ${dirMapping[conn.kind]}`}
                         title={name} />;
 
-                const mapProp = (kind: Endpoint['kind']) => (prop: BaseConnection, index: number) => {
+                const mapProp = (kind: Endpoint['kind']) => (prop: Port, index: number) => {
                     const key = EndpointImpl.computeId(node.id, index, kind);
                     return (
                         <div key={key}>
@@ -580,7 +574,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         };
 
         const collapsedProperties = (node: Node) => {
-            const dot = (conn: Endpoint, key: string, index: number, size: number) => {
+            const dot = (conn: Endpoint, key: string, index: number, size: number, name: string) => {
                 const style = () => {
                     const radius = 20;
                     const angle = size === 1 ? 0 : (index - size / 2 + 0.5) * Math.PI / 4;
@@ -608,11 +602,12 @@ export class Editor extends React.Component<Editor.Props, State> {
                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
                     ref={this.setConnectionEndpoint.bind(this, conn)}
-                    className={`dot ${conn.kind} ${dirMapping[conn.kind]}`} />;
+                    className={`dot ${conn.kind} ${dirMapping[conn.kind]}`}
+                    title={name} />;
             };
-            const mapProp = (kind: Endpoint['kind'], size: number) => (prop: BaseConnection, i: number) => {
+            const mapProp = (kind: Endpoint['kind'], size: number) => (prop: Port, i: number) => {
                 const key = EndpointImpl.computeId(node.id, i, kind);
-                return dot({ nodeId: node.id, port: i, kind: kind }, key, i, size);
+                return dot({ nodeId: node.id, port: i, kind: kind }, key, i, size, prop.name);
             };
 
             const inputs = <div key={node.id + 'inputs'} className={`connections ${dirMapping['input']}`}>{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
@@ -624,10 +619,10 @@ export class Editor extends React.Component<Editor.Props, State> {
         const nodes = props.nodes.map(node => {
             if (!state.nodesState.has(node.id)) {
                 // No nodes added from by the host
-                state.nodesState.set(node.id, { isCollapsed: true, pos: { x: 0, y: 0 }, size: { x: 100, y: 100 } });
+                state.nodesState.set(node.id, { isCollapsed: true, pos: node.position || { x: 0, y: 0 }, size: { x: 100, y: 100 } });
             }
             const nodeState = state.nodesState.get(node.id);
-            const { isCollapsed } = nodeState;
+            const isCollapsed = node.isCollapsed !== undefined ? node.isCollapsed : nodeState.isCollapsed;
             const isSelected = this.state.selection && this.state.selection.id === node.id;
             return (
                 <div
@@ -649,7 +644,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                         {isCollapsed ? collapsedProperties(node) : ''}
                     </div>
                     {isCollapsed ? '' : <div className="body">
-                        {props.config.resolver(node.payload)}
+                        {props.config.resolver(node)}
                         {properties(node)}
                     </div>}
                 </div>
@@ -658,25 +653,39 @@ export class Editor extends React.Component<Editor.Props, State> {
 
         // Find all connections
         const connections: { out: Endpoint, in: Endpoint }[] = [];
+        const nodeDict = new Map<String, Node>();
+        for (let node of props.nodes) {
+            nodeDict.set(node.id, node);
+        }
 
         for (let node of props.nodes) {
             let i = 0;
             for (let input of node.inputs) {
                 if (input.connection === undefined) continue;
                 if (Array.isArray(input.connection)) {
-                    for (let conn of input.connection) {
+                    for (let connection of input.connection) {
+                        const opponentNode = nodeDict.get(connection.nodeId);
                         // Is the opponent node available?
-                        if (props.nodes.findIndex(n => n.id === conn.nodeId) < 0) continue;
+                        if (opponentNode === undefined) continue;
+                        // if (props.nodes.findIndex(n => n.id === conn.nodeId) < 0) continue;
+                        const oppConnection = (opponentNode.outputs[connection.port].connection as Connection[]).find(c => c.nodeId === node.id);
 
-                        const inputConn: Endpoint = { nodeId: node.id, port: i, kind: 'input' };
-                        const outputConn: Endpoint = { nodeId: conn.nodeId, port: conn.port, kind: 'output' };
+                        const inputConn: Endpoint = { nodeId: node.id, port: i, kind: 'input', additionalClassName: connection.classNames };
+                        const outputConn: Endpoint = { nodeId: connection.nodeId, port: connection.port, kind: 'output', additionalClassName: oppConnection.classNames };
                         connections.push({ in: inputConn, out: outputConn });
                     }
                 }
                 else {
-                    if (props.nodes.findIndex(n => n.id === (input.connection as Connection).nodeId) < 0) continue;
-                    const inputConn: Endpoint = { nodeId: node.id, port: i, kind: 'input' };
-                    const outputConn: Endpoint = { nodeId: input.connection.nodeId, port: input.connection.port, kind: 'output' };
+                    const connection = input.connection as Connection;
+                    const opponentNode = nodeDict.get(connection.nodeId);
+                    // Is the opponent node available?
+                    if (opponentNode === undefined) continue;
+
+                    const oppConnection = (opponentNode.outputs[connection.port].connection as Connection[]).find(c => c.nodeId === node.id);
+
+                    if (props.nodes.findIndex(n => n.id === connection.nodeId) < 0) continue;
+                    const inputConn: Endpoint = { nodeId: node.id, port: i, kind: 'input', additionalClassName: connection.classNames };
+                    const outputConn: Endpoint = { nodeId: input.connection.nodeId, port: input.connection.port, kind: 'output', additionalClassName: oppConnection.classNames };
                     connections.push({ in: inputConn, out: outputConn });
                 }
                 ++i;
@@ -780,16 +789,19 @@ export class Editor extends React.Component<Editor.Props, State> {
         // const outputs = template.outputs.map(output => ({ ...output }));
 
         const { config } = this.props;
-        if (config.onChanged !== undefined) {
-            this.state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
-            config.onChanged({ type: 'NodeCreated', node: { ...proto, id } });
-        }
-        if (config.demoMode || config.onChanged === undefined) {
+        const updateProps = () => {
             this.props.nodes.push({ ...proto, id });
             this.setState(state => {
                 state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
                 return { ...state };
             });
+        };
+        if (config.onChanged !== undefined) {
+            this.state.nodesState.set(id, { isCollapsed: true, pos, size: { x: 100, y: 100 } });
+            config.onChanged({ type: 'NodeCreated', node: { ...proto, id } }, updateProps);
+        }
+        if (config.demoMode || config.onChanged === undefined) {
+            updateProps();
         }
 
     }

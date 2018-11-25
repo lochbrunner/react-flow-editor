@@ -49,12 +49,14 @@ body {
 }
 
 .react-flow-editor {
-    // height: 500px; // Override this in our app
-    // width: 800px; // Override this in our app
     position: absolute;
     top: 0;
     bottom: 0;
     width: 100%;
+
+    svg>path.connection.invalid {
+        stroke: #f88
+    }
 }
 
 .node.red {

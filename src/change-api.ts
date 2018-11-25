@@ -24,5 +24,11 @@ interface NodeCreated {
   type: 'NodeCreated';
 }
 
-export type ChangeAction =
-    NodeRemoved|ConnectionRemoved|ConnectionCreated|NodeCreated;
+interface NodeCollapseChanged {
+  id: string;
+  type: 'NodeCollapseChanged';
+  shouldBeCollapsed: boolean;
+}
+
+export type ChangeAction = NodeRemoved|ConnectionRemoved|ConnectionCreated|
+    NodeCreated|NodeCollapseChanged;

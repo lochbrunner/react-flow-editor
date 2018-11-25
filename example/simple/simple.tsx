@@ -87,10 +87,10 @@ const nodes: Node[] = [
     }
 ];
 
-function resolver(payload: any): JSX.Element {
-    if (payload.type === '') return <h2 />;
+function resolver(node: Node): JSX.Element {
+    if (node.payload.type === '') return <h2 />;
     return (
-        <p style={{ height: '100px', width: '60px' }}>{payload.h1}</p>
+        <p style={{ height: '100px', width: '60px' }}>{node.payload.h1}</p>
     );
 }
 
@@ -103,9 +103,10 @@ const onChanged: Config['onChanged'] = data => {
         log(`Node '${data.id}' was removed.`);
     else if (data.type === 'NodeCreated')
         log(`Node '${data.node.id}' was created.`);
-    else if (data.type === 'ConnectionCreated') {
+    else if (data.type === 'ConnectionCreated')
         log(`New connection between nodes '${data.input.nodeId}' [${data.input.port}]  and '${data.output.nodeId}' [${data.output.port}] created.`);
-    }
+    else if (data.type === 'NodeCollapseChanged')
+        log(`Collapse state of Node '${data.id}' is now ${data.shouldBeCollapsed}.`);
 };
 
 const config: Config = {

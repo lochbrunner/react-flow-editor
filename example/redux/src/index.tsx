@@ -13,7 +13,7 @@ import { Editor, Node, Config, MenuItem } from 'react-flow-editor';
 import { RootState } from './reducers';
 import { bindActionCreators } from 'redux';
 
-function resolver(payload: any): JSX.Element {
+function resolver(node: Node): JSX.Element {
     return (
         <div style={{ height: '200px', width: '200px' }}></div>
     );

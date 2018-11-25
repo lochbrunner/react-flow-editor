@@ -172,6 +172,8 @@ const loadMock = (): Node[] =>
 const addMock = (old: Node[]): Node[] => {
   const classNames = ['red', 'green', 'blue'];
   const randomColorIndex = Math.floor(Math.random() * 3);
+  const x = Math.floor(Math.random() * 400);
+  const y = Math.floor(Math.random() * 600);
   old.push({
     name: `Node ${old.length + 1}`,
     id: `node-${old.length + 1}`,
@@ -181,6 +183,7 @@ const addMock = (old: Node[]): Node[] => {
     outputs: [
       {connection: [], name: 'output 1'}, {connection: [], name: 'output 2 '}
     ],
+    position: {x, y},
     properties: {display: 'only-dots'},
     classNames: [classNames[randomColorIndex]]
   });
@@ -219,16 +222,18 @@ export const reducer: Reducer<RootState> =
         return {nodes: removeData(state.nodes)};
       } else if (action.type === Actions.EDITOR_UPDATES) {
         const payload = action.payload as ChangeAction;
+        const classNames = Math.random() > 0.7 ? ['invalid'] : [];
         if (payload.type === 'ConnectionCreated') {
           const inputIndex =
               state.nodes.findIndex(n => n.id === payload.input.nodeId);
           const outputIndex =
               state.nodes.findIndex(n => n.id === payload.output.nodeId);
-          const outputConnection = {
+          const outputConnection: Connection = {
             nodeId: payload.output.nodeId,
-            port: payload.output.port
+            port: payload.output.port,
+            classNames
           };
-          const inputConnection = {
+          const inputConnection: Connection = {
             nodeId: payload.input.nodeId,
             port: payload.input.port
           };
@@ -265,6 +270,13 @@ export const reducer: Reducer<RootState> =
         } else if (payload.type === 'NodeRemoved') {
           const inputNode = state.nodes.findIndex(n => n.id === payload.id);
           state.nodes.splice(inputNode, 1);
+        } else if (payload.type === 'NodeCollapseChanged') {
+          const nodeIndex = state.nodes.findIndex(n => n.id === payload.id);
+          const node: Node = {
+            ...state.nodes[nodeIndex],
+            isCollapsed: payload.shouldBeCollapsed
+          };
+          state.nodes[nodeIndex] = node;
         }
         console.log(payload);
         return {...state};

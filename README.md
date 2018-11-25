@@ -1,6 +1,8 @@
 [![npm version](https://badge.fury.io/js/react-flow-editor.svg)](https://badge.fury.io/js/react-flow-editor)
 [![Downloads](https://img.shields.io/npm/dt/react-flow-editor.svg)](https://www.npmjs.com/package/react-flow-editor)
 [![GitHub issues](https://img.shields.io/github/issues/lochbrunner/react-flow-editor.svg)](https://github.com/lochbrunner/react-flow-editor/issues)
+![David](https://img.shields.io/david/lochbrunner/react-flow-editor.svg)
+![David](https://img.shields.io/david/dev/lochbrunner/react-flow-editor.svg)
 
 # Graph editor
 
@@ -100,8 +102,8 @@ export interface Node {
   name: string;
   type: string;
   id: string;
-  inputs: BaseInput[];
-  outputs: BaseOutput[];
+  inputs: InputPort[];
+  outputs: OutputPort[];
   payload?: any;
   position?: Vector2d;
   properties?: {display: 'stacked' | 'only-dots'};
@@ -109,14 +111,22 @@ export interface Node {
 }
 ```
 
-For now `BaseInput` and `BaseOutput` are identically to the `BaseConnection` interface:
+For now `InputPort` and `OutputPort` are identically to the `Port` interface:
 
 ```typescript
-export interface BaseConnection {
+export interface Port {
   name: string;
   connection?: Connection|Connection[];
   payload?: any;
-  renderer?: (connection: BaseConnection) => JSX.Element;
+  renderer?: (connection: Port) => JSX.Element;
+}
+```
+
+```typescript
+export interface Connection {
+  nodeId: string;
+  port: number;
+  classNames?: string[];
 }
 ```
 
