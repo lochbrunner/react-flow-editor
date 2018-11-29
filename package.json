@@ -1,6 +1,6 @@
 {
     "name": "react-flow-editor",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "description": "React component which enables creating flow editors with ease",
     "author": {
         "name": "Matthias Lochbrunner",

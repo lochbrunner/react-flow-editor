@@ -68,6 +68,10 @@ export interface Connection {
    * Example UC: mark invalid connections
    */
   classNames?: string[];
+  /**
+   * Will be printed as title
+   */
+  notes?: string;
 }
 
 /**

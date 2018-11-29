@@ -231,7 +231,9 @@ export const reducer: Reducer<RootState> =
           const outputConnection: Connection = {
             nodeId: payload.output.nodeId,
             port: payload.output.port,
-            classNames
+            classNames,
+            notes:
+                `Connects ${payload.input.nodeId} with ${payload.output.nodeId}`
           };
           const inputConnection: Connection = {
             nodeId: payload.input.nodeId,

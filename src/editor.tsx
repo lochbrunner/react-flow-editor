@@ -50,6 +50,7 @@ export interface Endpoint {
     port: number;
     kind: 'input' | 'output';
     additionalClassName?: string[];
+    notes?: string;
     name?: string;
 }
 
@@ -476,10 +477,11 @@ export class Editor extends React.Component<Editor.Props, State> {
         const output = Vector2d.add(outputOffset, outputNode.pos);
         const input = Vector2d.add(inputOffset, inputNode.pos);
         const additionalClassNames = [...(outputConn.additionalClassName || []), ...(inputConn.additionalClassName || [])];
-        return this.connectionPath(output, input, additionalClassNames, isSelected, key, this.select.bind(this, 'connection', connId));
+        const notes = outputConn.notes || inputConn.notes || undefined;
+        return this.connectionPath(output, input, additionalClassNames, notes, isSelected, key, this.select.bind(this, 'connection', connId));
     }
 
-    private connectionPath(output: Vector2d, input: Vector2d, additionalClassNames?: string[], selected?: boolean, key?: string, onClick?: (e: React.MouseEvent<SVGPathElement>) => void) {
+    private connectionPath(output: Vector2d, input: Vector2d, additionalClassNames?: string[], notes?: string, selected?: boolean, key?: string, onClick?: (e: React.MouseEvent<SVGPathElement>) => void) {
         const a0 = output;
         const a3 = input;
         const anchorLength = this.props.config.connectionAnchorsLength || 100;
@@ -499,7 +501,12 @@ export class Editor extends React.Component<Editor.Props, State> {
         const width = 3 * this.state.transformation.zoom;
         const composedAdditionalClassName = (selected ? 'connection selected' : 'connection') + ` ${(additionalClassNames || []).join(' ')}`;
 
-        return <path className={composedAdditionalClassName} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} />;
+        if (notes)
+            return <path className={composedAdditionalClassName} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} >
+                <title>{notes}</title>
+            </path>;
+        else
+            return <path className={composedAdditionalClassName} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} />;
     }
 
     private onEditorUpdate(element: Element) {
@@ -670,8 +677,20 @@ export class Editor extends React.Component<Editor.Props, State> {
                         // if (props.nodes.findIndex(n => n.id === conn.nodeId) < 0) continue;
                         const oppConnection = (opponentNode.outputs[connection.port].connection as Connection[]).find(c => c.nodeId === node.id);
 
-                        const inputConn: Endpoint = { nodeId: node.id, port: i, kind: 'input', additionalClassName: connection.classNames };
-                        const outputConn: Endpoint = { nodeId: connection.nodeId, port: connection.port, kind: 'output', additionalClassName: oppConnection.classNames };
+                        const inputConn: Endpoint = {
+                            nodeId: node.id,
+                            port: i,
+                            kind: 'input',
+                            additionalClassName: connection.classNames,
+                            notes: connection.notes
+                        };
+                        const outputConn: Endpoint = {
+                            nodeId: connection.nodeId,
+                            port: connection.port,
+                            kind: 'output',
+                            additionalClassName: oppConnection.classNames,
+                            notes: oppConnection.notes
+                        };
                         connections.push({ in: inputConn, out: outputConn });
                     }
                 }
@@ -684,8 +703,20 @@ export class Editor extends React.Component<Editor.Props, State> {
                     const oppConnection = (opponentNode.outputs[connection.port].connection as Connection[]).find(c => c.nodeId === node.id);
 
                     if (props.nodes.findIndex(n => n.id === connection.nodeId) < 0) continue;
-                    const inputConn: Endpoint = { nodeId: node.id, port: i, kind: 'input', additionalClassName: connection.classNames };
-                    const outputConn: Endpoint = { nodeId: input.connection.nodeId, port: input.connection.port, kind: 'output', additionalClassName: oppConnection.classNames };
+                    const inputConn: Endpoint = {
+                        nodeId: node.id,
+                        port: i,
+                        kind: 'input',
+                        additionalClassName: connection.classNames,
+                        notes: connection.notes
+                    };
+                    const outputConn: Endpoint = {
+                        nodeId: input.connection.nodeId,
+                        port: input.connection.port,
+                        kind: 'output',
+                        additionalClassName: oppConnection.classNames,
+                        notes: oppConnection.notes
+                    };
                     connections.push({ in: inputConn, out: outputConn });
                 }
                 ++i;

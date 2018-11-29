@@ -127,6 +127,7 @@ export interface Connection {
   nodeId: string;
   port: number;
   classNames?: string[];
+  notes?: string;
 }
 ```
 
