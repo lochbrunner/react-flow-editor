@@ -35,6 +35,10 @@ export interface Config {
    * Default is 'we'
    */
   direction?: 'ew'|'we';
+  /**
+   * Disables the zooming feature
+   */
+  disableZoom?: boolean;
 }
 
 export interface Node {

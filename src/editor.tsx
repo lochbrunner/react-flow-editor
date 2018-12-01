@@ -400,6 +400,7 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     private onWheel(e: React.WheelEvent<HTMLElement>) {
         if (e.ctrlKey) return;
+        if (this.props.config.disableZoom) return;
         const pt = this.state.transformation;
         const zoomFactor = Math.pow(1.25, Math.sign(e.deltaY));
         const zoom = pt.zoom * zoomFactor;
