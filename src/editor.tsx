@@ -105,6 +105,13 @@ const epPredicate = (nodeId: string, port?: number) => (ep: Port) => {
     return Array.isArray(ep.connection) ? ep.connection.findIndex(comp) >= 0 : comp(ep.connection);
 };
 
+function filterIfArray<T>(input: T | T[], predicate: (t: T) => boolean): T {
+    if (input instanceof Array)
+        return input.find(predicate);
+    else
+        return input;
+}
+
 //#endregion "Helper function"
 
 export class Editor extends React.Component<Editor.Props, State> {
@@ -343,11 +350,12 @@ export class Editor extends React.Component<Editor.Props, State> {
                     const updateProps = () => { this.removeConnection(input, output); };
                     if (config.onChanged !== undefined)
                         config.onChanged({ input, output, type: 'ConnectionRemoved', id: selection.id }, updateProps);
-                    if (config.onChanged === undefined || config.demoMode) updateProps;
+                    if (config.onChanged === undefined || config.demoMode) updateProps();
                 }
                 else if (selection.type === 'node') {
                     const index = this.props.nodes.findIndex(node => node.id === selection.id);
                     // Delete all corresponding connections
+                    const correspondingConnections: { input: Endpoint; output: Endpoint; }[] = [];
                     const nodeToDelete = this.props.nodes[index];
                     let inputIndex = -1;
                     for (let input of nodeToDelete.inputs) {
@@ -356,8 +364,12 @@ export class Editor extends React.Component<Editor.Props, State> {
                         const peerNodes = this.props.nodes.filter(nodeIdPredicate(input.connection));//  find(nodePredicate(input.id));
                         for (let peerNode of peerNodes) {
                             const peerOutputs = peerNode.outputs.filter(epPredicate(nodeToDelete.id));
-                            for (let peerOutput of peerOutputs)
-                                peerOutput.connection = this.removeFromArrayOrValue(peerOutput.connection, { nodeId: nodeToDelete.id, port: inputIndex });
+                            for (let peerOutputId = 0; peerOutputId < peerOutputs.length; ++peerOutputId) {
+                                correspondingConnections.push({
+                                    input: { kind: 'input', nodeId: nodeToDelete.id, port: inputIndex },
+                                    output: { kind: 'output', nodeId: peerNode.id, port: peerOutputId }
+                                });
+                            }
                         }
                     }
 
@@ -368,16 +380,25 @@ export class Editor extends React.Component<Editor.Props, State> {
                         const peerNodes = this.props.nodes.filter(nodeIdPredicate(output.connection));
                         for (let peerNode of peerNodes) {
                             const peerInputs = peerNode.inputs.filter(epPredicate(nodeToDelete.id));
-                            for (let peerInput of peerInputs)
-                                peerInput.connection = this.removeFromArrayOrValue(peerInput.connection, { nodeId: nodeToDelete.id, port: outputIndex });
+                            for (let peerInputId = 0; peerInputId < peerInputs.length; ++peerInputId) {
+                                correspondingConnections.push({
+                                    input: { kind: 'input', nodeId: peerNode.id, port: peerInputId },
+                                    output: { kind: 'output', nodeId: nodeToDelete.id, port: outputIndex }
+                                });
+                            }
                         }
                     }
 
-                    const updateProps = () => { this.props.nodes.splice(index, 1); };
+                    const updateProps = () => {
+                        for (const connectionToDelete of correspondingConnections) {
+                            this.removeConnection(connectionToDelete.input, connectionToDelete.output);
+                        }
+                        this.props.nodes.splice(index, 1);
+                    };
                     if (config.onChanged !== undefined)
-                        config.onChanged({ type: 'NodeRemoved', id: selection.id }, updateProps);
+                        config.onChanged({ type: 'NodeRemoved', id: selection.id, correspondingConnections }, updateProps);
                     if (config.onChanged === undefined || config.demoMode)
-                        updateProps;
+                        updateProps();
                 }
 
                 this.setState((state) => {
@@ -542,7 +563,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             if (node.properties !== undefined && node.properties.display === 'only-dots') {
                 const dot = (kind: Endpoint['kind'], total: number) =>
                     (prop: Port, index: number) => {
-                        const conn: Endpoint = { nodeId: node.id, port: index, kind: kind };
+                        const conn: Endpoint = { nodeId: node.id, port: index, kind: kind, name: prop.name };
                         const site = dirMapping[kind];
                         const style = site === 'right' ? { right: '7px' } : {};
                         return (
@@ -573,7 +594,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                     return (
                         <div key={key}>
                             {prop.renderer ? prop.renderer(prop) : prop.name}
-                            {dot({ nodeId: node.id, port: index, kind: kind }, prop.name)}
+                            {dot({ nodeId: node.id, port: index, kind: kind, name: prop.name }, prop.name)}
                         </div>
                     );
                 };
@@ -615,7 +636,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             };
             const mapProp = (kind: Endpoint['kind'], size: number) => (prop: Port, i: number) => {
                 const key = EndpointImpl.computeId(node.id, i, kind);
-                return dot({ nodeId: node.id, port: i, kind: kind }, key, i, size, prop.name);
+                return dot({ nodeId: node.id, port: i, kind: kind, name: prop.name }, key, i, size, prop.name);
             };
 
             const inputs = <div key={node.id + 'inputs'} className={`connections ${dirMapping['input']}`}>{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
@@ -675,8 +696,9 @@ export class Editor extends React.Component<Editor.Props, State> {
                         const opponentNode = nodeDict.get(connection.nodeId);
                         // Is the opponent node available?
                         if (opponentNode === undefined) continue;
-                        // if (props.nodes.findIndex(n => n.id === conn.nodeId) < 0) continue;
-                        const oppConnection = (opponentNode.outputs[connection.port].connection as Connection[]).find(c => c.nodeId === node.id);
+
+                        const oppConnectionRaw = opponentNode.outputs[connection.port].connection;
+                        const oppConnection = filterIfArray(oppConnectionRaw, c => c.nodeId === node.id);
 
                         const inputConn: Endpoint = {
                             nodeId: node.id,
@@ -700,8 +722,8 @@ export class Editor extends React.Component<Editor.Props, State> {
                     const opponentNode = nodeDict.get(connection.nodeId);
                     // Is the opponent node available?
                     if (opponentNode === undefined) continue;
-
-                    const oppConnection = (opponentNode.outputs[connection.port].connection as Connection[]).find(c => c.nodeId === node.id);
+                    const oppConnectionRaw = opponentNode.outputs[connection.port].connection;
+                    const oppConnection = filterIfArray(oppConnectionRaw, c => c.nodeId === node.id);
 
                     if (props.nodes.findIndex(n => n.id === connection.nodeId) < 0) continue;
                     const inputConn: Endpoint = {

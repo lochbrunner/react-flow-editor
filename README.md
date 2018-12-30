@@ -141,6 +141,13 @@ By default we recommend to import the default theme with
 
 But you can change the style of all components by coping that file and adjust its values.
 
+## Roadmap
+
+* Editing the title of the node
+* Grouping nodes (similar to *Blender*)
+* Optimize hooking
+* Fix zooming and scrolling
+
 ## Contributing
 
 This library is very young. So please consider that it might have some bugs, but I will try to fix them, when they get reported.

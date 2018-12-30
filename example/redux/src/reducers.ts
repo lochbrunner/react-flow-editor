@@ -1,4 +1,4 @@
-import {ChangeAction, Node} from 'react-flow-editor';
+import {ChangeAction, Endpoint, Node} from 'react-flow-editor';
 import {Connection} from 'react-flow-editor/dist/types';
 import {Reducer} from 'redux';
 import {Action} from 'redux-actions';
@@ -205,6 +205,32 @@ const removeData = (old: Node[]): Node[] => {
 
 const clearMock = (): Node[] => [];
 
+const removeConnection = (state: RootState, connection: {
+  input: Endpoint,
+  output: Endpoint
+}) => {
+  const inputNodeIndex =
+      state.nodes.findIndex(n => n.id === connection.input.nodeId);
+
+  const inputConnections =
+      state.nodes[inputNodeIndex].inputs[connection.input.port].connection as
+      Connection[];
+  const inputConnectionIndex = inputConnections.findIndex(
+      s => s.nodeId === connection.output.nodeId &&
+          s.port === connection.output.port);
+  inputConnections.splice(inputConnectionIndex, 1);
+
+  const outputNodeIndex =
+      state.nodes.findIndex(n => n.id === connection.output.nodeId);
+  const outputConnections =
+      state.nodes[outputNodeIndex].outputs[connection.output.port].connection as
+      Connection[];
+  const outputConnectionIndex = outputConnections.findIndex(
+      s => s.nodeId === connection.input.nodeId &&
+          s.port === connection.input.port);
+  outputConnections.splice(outputConnectionIndex, 1);
+};
+
 export const reducer: Reducer<RootState> =
     (state: RootState = {
       nodes: clearMock()
@@ -246,30 +272,13 @@ export const reducer: Reducer<RootState> =
            Connection[])
               .push(inputConnection);
         } else if (payload.type === 'ConnectionRemoved') {
-          const inputNodeIndex =
-              state.nodes.findIndex(n => n.id === payload.input.nodeId);
-
-          const inputConnections = state.nodes[inputNodeIndex]
-                                       .inputs[payload.input.port]
-                                       .connection as Connection[];
-          const inputConnectionIndex = inputConnections.findIndex(
-              s => s.nodeId === payload.output.nodeId &&
-                  s.port === payload.output.port);
-          inputConnections.splice(inputConnectionIndex, 1);
-
-          const outputNodeIndex =
-              state.nodes.findIndex(n => n.id === payload.output.nodeId);
-          const outputConnections = state.nodes[outputNodeIndex]
-                                        .outputs[payload.output.port]
-                                        .connection as Connection[];
-          const outputConnectionIndex = outputConnections.findIndex(
-              s => s.nodeId === payload.input.nodeId &&
-                  s.port === payload.input.port);
-          outputConnections.splice(outputConnectionIndex, 1);
-
+          removeConnection(state, payload);
         } else if (payload.type === 'NodeCreated') {
           state.nodes.push(payload.node);
         } else if (payload.type === 'NodeRemoved') {
+          for (const conn of payload.correspondingConnections) {
+            removeConnection(state, conn);
+          }
           const inputNode = state.nodes.findIndex(n => n.id === payload.id);
           state.nodes.splice(inputNode, 1);
         } else if (payload.type === 'NodeCollapseChanged') {

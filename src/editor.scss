@@ -40,17 +40,18 @@ $collapse-animation-duration: 0.4s;
         border-radius: $border-radius-expanded;
         border: $node-border-width solid $node-border-color;
         box-sizing: content-box;
-        z-index: 0;
+        z-index: 1;
 
         transition: $node-transitions;
 
         &.selected {
             border: $node-border-width-selected solid $selected-color;
             margin: #{$node-border-width - $node-border-width-selected};
-            z-index: 2;
+            z-index: 3;
         }
 
         &.collapsed {
+            z-index: 0;
             border-radius: $border-radius-collapsed;
 
             >.header {
@@ -60,7 +61,7 @@ $collapse-animation-duration: 0.4s;
         }
 
         &:hover {
-            z-index: 1;
+            z-index: 2;
 
             &.selected {
                 border: $node-border-width-selected solid $selected-color;

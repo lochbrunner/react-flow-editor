@@ -1,6 +1,6 @@
 {
     "name": "react-flow-editor",
-    "version": "0.3.3",
+    "version": "0.3.5",
     "description": "React component which enables creating flow editors with ease",
     "author": {
         "name": "Matthias Lochbrunner",
@@ -20,8 +20,9 @@
         "build": "npm run style && npm run compile",
         "style": "copyfiles -u 1 ./src/*.scss ./dist/",
         "lint": "tslint ./{src}/**/*.{ts,tsx}",
-        "refresh": " rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist",
-        "refresh-simple": " rm -rf ./example/simple/node_modules/react-flow-editor/dist && cp -r ./dist ./example/simple/node_modules/react-flow-editor/dist"
+        "refresh-all": "npm run refresh-redux && npm run refresh-simple",
+        "refresh-redux": " rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist",
+        "refresh-simple": " rm -rf ./example/simple/node_modules/react-flow-editor/dist && cp -r ./dist ./example/simple/node_modules/react-flow-editor"
     },
     "dependencies": {
         "lodash": "^4.17.10"
