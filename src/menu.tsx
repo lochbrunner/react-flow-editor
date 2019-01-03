@@ -46,8 +46,7 @@ export class MenuItem extends React.Component<MenuItem.Props, State> {
             this.boundingRect.x !== rect.x ||
             this.boundingRect.y !== rect.y) {
             this.boundingRect = rect;
-            const bodyRect = document.body.getBoundingClientRect();
-            this.offset = { x: rect.left - bodyRect.left, y: rect.top - bodyRect.top };
+            this.offset = { x: rect.left, y: rect.top };
             this.setState(state => state);
         }
     }

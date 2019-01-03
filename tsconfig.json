@@ -13,6 +13,7 @@
     "removeComments": true,
     "strictNullChecks": false,
     "outDir": "dist",
+    "downlevelIteration": true,
     "lib": [
       "es6",
       "es7",

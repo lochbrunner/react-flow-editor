@@ -12,7 +12,7 @@ An ui library for creating flow based editors with react and typescript/javascri
 
 Try the [demo](https://lochbrunner.github.io/react-flow-editor/simple) in your browser.
 
-If you are interested in redux dive into the [example](./example/redux/) or try the more advanced [demo](https://lochbrunner.github.io/react-flow-editor/redux/index.html).
+If you are interested in *redux* dive into the [example](./example/redux/) or try the more advanced [demo](https://lochbrunner.github.io/react-flow-editor/redux/index.html).
 
 ## Getting started
 

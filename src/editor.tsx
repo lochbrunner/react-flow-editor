@@ -355,6 +355,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                 else if (selection.type === 'node') {
                     const index = this.props.nodes.findIndex(node => node.id === selection.id);
                     // Delete all corresponding connections
+                    // TODO: Refactor the next two for loops in order to write the code only once
                     const correspondingConnections: { input: Endpoint; output: Endpoint; }[] = [];
                     const nodeToDelete = this.props.nodes[index];
                     let inputIndex = -1;
@@ -363,8 +364,11 @@ export class Editor extends React.Component<Editor.Props, State> {
                         if (isEmptyArrayOrUndefined(input.connection)) continue;
                         const peerNodes = this.props.nodes.filter(nodeIdPredicate(input.connection));//  find(nodePredicate(input.id));
                         for (let peerNode of peerNodes) {
-                            const peerOutputs = peerNode.outputs.filter(epPredicate(nodeToDelete.id));
-                            for (let peerOutputId = 0; peerOutputId < peerOutputs.length; ++peerOutputId) {
+                            const peerOutputsIds = peerNode.outputs
+                                .map((v, i) => ({ v, i }))
+                                .filter(o => epPredicate(nodeToDelete.id)(o.v))
+                                .map(o => o.i);
+                            for (const peerOutputId of peerOutputsIds) {
                                 correspondingConnections.push({
                                     input: { kind: 'input', nodeId: nodeToDelete.id, port: inputIndex },
                                     output: { kind: 'output', nodeId: peerNode.id, port: peerOutputId }
@@ -379,8 +383,11 @@ export class Editor extends React.Component<Editor.Props, State> {
                         if (isEmptyArrayOrUndefined(output.connection)) continue;
                         const peerNodes = this.props.nodes.filter(nodeIdPredicate(output.connection));
                         for (let peerNode of peerNodes) {
-                            const peerInputs = peerNode.inputs.filter(epPredicate(nodeToDelete.id));
-                            for (let peerInputId = 0; peerInputId < peerInputs.length; ++peerInputId) {
+                            const peerInputsIds = peerNode.inputs
+                                .map((v, i) => ({ v, i }))
+                                .filter(o => epPredicate(nodeToDelete.id)(o.v))
+                                .map(o => o.i);
+                            for (const peerInputId of peerInputsIds) {
                                 correspondingConnections.push({
                                     input: { kind: 'input', nodeId: peerNode.id, port: peerInputId },
                                     output: { kind: 'output', nodeId: nodeToDelete.id, port: outputIndex }
@@ -876,7 +883,6 @@ export class Editor extends React.Component<Editor.Props, State> {
 
         const host = document.createElement('div');
         host.className = 'react-flow-creating-node';
-        console.log(`node.className: ${node.className}`);
         host.appendChild(node);
 
         document.body.appendChild(host);
@@ -898,5 +904,13 @@ export class Editor extends React.Component<Editor.Props, State> {
         document.body.addEventListener('mouseup', onFinishCreatingNewNode);
         document.body.addEventListener('mouseleave', onFinishCreatingNewNode);
         document.body.addEventListener('mousemove', onMove);
+    }
+
+    getPositions(): Map<string, Vector2d> {
+        const map = new Map<string, Vector2d>();
+        for (const [key, entry] of this.state.nodesState.entries()) {
+            map.set(key, entry.pos);
+        }
+        return map;
     }
 }
