@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { Vector2d, Rect } from './geometry';
 import { BUTTON_LEFT, KEY_CODE_DELETE, BUTTON_MIDDLE } from './constants';
 import { Connection, InputPort, OutputPort, Size, Port, Node, Config } from './types';
+import classNames from 'classnames';
 
 declare function setImmediate(func: () => void);
 
@@ -511,10 +512,16 @@ export class Editor extends React.Component<Editor.Props, State> {
     }
 
     private connectionPath(output: Vector2d, input: Vector2d, additionalClassNames?: string[], notes?: string, selected?: boolean, key?: string, onClick?: (e: React.MouseEvent<SVGPathElement>) => void) {
+        const { props } = this;
+        const classNameOrDefault = (label: string) => {
+            if (props.config.style && props.config.style[label])
+                return props.config.style[label];
+            return label;
+        }
         const a0 = output;
         const a3 = input;
-        const anchorLength = this.props.config.connectionAnchorsLength || 100;
-        const dir = this.props.config.direction || 'we';
+        const anchorLength = props.config.connectionAnchorsLength || 100;
+        const dir = props.config.direction || 'we';
         // TODO: Anchor length depends on y distance as well
         const dx = Math.max(Math.abs(a0.x - a3.x) / 1.5, anchorLength) * (dir === 'we' ? 1 : -1);
         const a1 = { x: a0.x - dx, y: a0.y };
@@ -522,20 +529,25 @@ export class Editor extends React.Component<Editor.Props, State> {
 
         let cmd: string;
 
-        if (this.props.config.connectionType === 'bezier')
+        if (props.config.connectionType === 'bezier')
             cmd = `M ${a0.x} ${a0.y} C ${a1.x} ${a1.y}, ${a2.x} ${a2.y}, ${a3.x} ${a3.y}`;
-        else if (this.props.config.connectionType === 'linear')
+        else if (props.config.connectionType === 'linear')
             cmd = `M ${a0.x} ${a0.y} L ${a3.x} ${a3.y}`;
 
         const width = 3 * this.state.transformation.zoom;
-        const composedAdditionalClassName = (selected ? 'connection selected' : 'connection') + ` ${(additionalClassNames || []).join(' ')}`;
+
+        const pathClassNames = classNames(
+            classNameOrDefault('connection'),
+            { [classNameOrDefault('selected')]: selected },
+            additionalClassNames || []
+        );
 
         if (notes)
-            return <path className={composedAdditionalClassName} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} >
+            return <path className={pathClassNames} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} >
                 <title>{notes}</title>
             </path>;
         else
-            return <path className={composedAdditionalClassName} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} />;
+            return <path className={pathClassNames} onClick={onClick ? onClick : () => { }} key={key || 'wk'} strokeWidth={`${width}px`} d={cmd} />;
     }
 
     private onEditorUpdate(element: Element) {
@@ -550,11 +562,23 @@ export class Editor extends React.Component<Editor.Props, State> {
         }
     }
 
+    private classNameOrDefault(label: string) {
+        if (this.props.config.style && this.props.config.style[label])
+            return this.props.config.style[label];
+        return label;
+    }
+
     render() {
 
         const workingConnection = (info: WorkItemConnection) => {
             return this.connectionPath(info.output, info.input);
         };
+
+        const classNameOrDefault = (label: string) => {
+            if (props.config.style && props.config.style[label])
+                return props.config.style[label];
+            return label;
+        }
 
         const { props, state } = this;
 
@@ -573,13 +597,18 @@ export class Editor extends React.Component<Editor.Props, State> {
                         const conn: Endpoint = { nodeId: node.id, port: index, kind: kind, name: prop.name };
                         const site = dirMapping[kind];
                         const style = site === 'right' ? { right: '7px' } : {};
+                        const dotClassName = classNames(
+                            classNameOrDefault('dot'),
+                            classNameOrDefault(kind),
+                            classNameOrDefault(site),
+                        );
                         return (
                             <div key={EndpointImpl.computeId(node.id, index, kind)}>
                                 <div
                                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
                                     ref={this.setConnectionEndpoint.bind(this, conn)}
-                                    className={`dot ${kind} ${site}`}
+                                    className={dotClassName}
                                     style={{ ...style, position: 'absolute', top: `calc(${100 * (index + 1) / (total + 1)}% - 8px)` }}
                                     title={prop.name} />
                             </div>);
@@ -587,13 +616,17 @@ export class Editor extends React.Component<Editor.Props, State> {
                 return [...node.inputs.map(dot('input', node.inputs.length)), ...node.outputs.map(dot('output', node.outputs.length))];
 
             } else {
-
+                const dotClassName = conn => classNames(
+                    classNameOrDefault('dot'),
+                    classNameOrDefault(conn.kind),
+                    classNameOrDefault(dirMapping[conn.kind]),
+                );
                 const dot = (conn: Endpoint, name: string) =>
                     <div
                         onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                         onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
                         ref={this.setConnectionEndpoint.bind(this, conn)}
-                        className={`dot ${conn.kind} ${dirMapping[conn.kind]}`}
+                        className={dotClassName(conn)}
                         title={name} />;
 
                 const mapProp = (kind: Endpoint['kind']) => (prop: Port, index: number) => {
@@ -632,22 +665,34 @@ export class Editor extends React.Component<Editor.Props, State> {
                         console.warn(`Unknown dir ${conn.kind}`);
                     }
                 };
+                const dotClassName = classNames(
+                    classNameOrDefault('dot'),
+                    classNameOrDefault(conn.kind),
+                    classNameOrDefault(dirMapping[conn.kind]),
+                );
                 return <div
                     style={style()}
                     key={key}
                     onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
                     onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
                     ref={this.setConnectionEndpoint.bind(this, conn)}
-                    className={`dot ${conn.kind} ${dirMapping[conn.kind]}`}
+                    className={dotClassName}
                     title={name} />;
             };
             const mapProp = (kind: Endpoint['kind'], size: number) => (prop: Port, i: number) => {
                 const key = EndpointImpl.computeId(node.id, i, kind);
                 return dot({ nodeId: node.id, port: i, kind: kind, name: prop.name }, key, i, size, prop.name);
             };
-
-            const inputs = <div key={node.id + 'inputs'} className={`connections ${dirMapping['input']}`}>{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
-            const outputs = <div key={node.id + 'outputs'} className={`connections ${dirMapping['output']}`}>{node.outputs.map(mapProp('output', node.outputs.length))}</div>;
+            const inputsClassNames = classNames(
+                classNameOrDefault('connections'),
+                classNameOrDefault(dirMapping['input'])
+            );
+            const outputsClassNames = classNames(
+                classNameOrDefault('connections'),
+                classNameOrDefault(dirMapping['output'])
+            );
+            const inputs = <div key={node.id + 'inputs'} className={inputsClassNames}>{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
+            const outputs = <div key={node.id + 'outputs'} className={outputsClassNames}>{node.outputs.map(mapProp('output', node.outputs.length))}</div>;
 
             return [inputs, outputs];
         };
@@ -660,26 +705,44 @@ export class Editor extends React.Component<Editor.Props, State> {
             const nodeState = state.nodesState.get(node.id);
             const isCollapsed = node.isCollapsed !== undefined ? node.isCollapsed : nodeState.isCollapsed;
             const isSelected = this.state.selection && this.state.selection.id === node.id;
+            const nodeClassNames = classNames(
+                classNameOrDefault('node'),
+                {
+                    [classNameOrDefault('collapsed')]: isCollapsed,
+                    [classNameOrDefault('selected')]: isSelected
+                },
+                node.classNames || []
+            );
+            const headerClassNames = classNameOrDefault('header');
+            const expanderClassNames = classNameOrDefault('expander');
+            const iconClassNames = classNames(
+                classNameOrDefault('icon'),
+                {
+                    [classNameOrDefault('arrow-down')]: isCollapsed,
+                    [classNameOrDefault('arrow-right')]: !isCollapsed,
+                }
+            );
+            const bodyClassNames = classNameOrDefault('body');
             return (
                 <div
                     onClick={this.select.bind(this, 'node', node.id)}
                     key={node.id}
                     style={nodeStyle(nodeState.pos)}
-                    className={`node ${isCollapsed ? 'collapsed' : ''} ${isSelected ? 'selected' : ''}${node.classNames ? ' ' + node.classNames.join(' ') : ''}`}>
+                    className={nodeClassNames}>
                     <div
                         onMouseDown={this.onDragStarted.bind(this, node.id)}
                         onDoubleClick={this.toggleExpandNode.bind(this, node.id)}
-                        className="header" >
-                        <div className="expander"
+                        className={headerClassNames} >
+                        <div className={expanderClassNames}
                             onClick={this.toggleExpandNode.bind(this, node.id)}
                             onMouseDown={e => e.stopPropagation()}
                         >
-                            <div className={`icon ${isCollapsed ? 'arrow-down' : 'arrow-right'}`} />
+                            <div className={iconClassNames} />
                         </div>
                         <span>{node.name}</span>
                         {isCollapsed ? collapsedProperties(node) : ''}
                     </div>
-                    {isCollapsed ? '' : <div className="body">
+                    {isCollapsed ? '' : <div className={bodyClassNames}>
                         {props.config.resolver(node)}
                         {properties(node)}
                     </div>}
@@ -792,21 +855,27 @@ export class Editor extends React.Component<Editor.Props, State> {
                 }
                 ctx.stroke();
             };
-            return <canvas className="grid" width={width} height={height} ref={draw.bind(this)} />;
+            const gridClassName = classNameOrDefault('grid');
+            return <canvas className={gridClassName} width={width} height={height} ref={draw.bind(this)} />;
         };
 
         const nodesContainerStyle = {
             transform: `matrix(${transformation.zoom},0,0,${transformation.zoom},${transformation.dx},${transformation.dy})`
         };
 
+        const editorClassName = classNames(
+            classNameOrDefault('react-flow-editor'),
+            props.additionalClassName || []
+        );
+
         return (
             <div style={props.style} ref={this.onEditorUpdate.bind(this)}
                 tabIndex={0} onKeyDown={this.onKeyDown.bind(this)} onWheel={this.onWheel.bind(this)}
                 onMouseLeave={this.onDragEnded.bind(this)} onMouseMove={this.onDrag.bind(this)}
                 onMouseDown={this.onMouseGlobalDown.bind(this)} onMouseUp={this.onDragEnded.bind(this)}
-                className={`react-flow-editor${props.additionalClassName ? ' ' + props.additionalClassName : ''}`} >
+                className={editorClassName} >
                 {grid()}
-                <svg ref={this.updateEditorSize.bind(this)} className="connections" xmlns="http://www.w3.org/2000/svg">
+                <svg ref={this.updateEditorSize.bind(this)} className={classNameOrDefault('connections')} xmlns="http://www.w3.org/2000/svg">
                     {connectionsLines}
                     {workingItem}
                 </svg>
@@ -867,9 +936,18 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     }
 
-    onStartCreatingNewNode(name: string, factory: () => Node, pos: Vector2d, offset: Vector2d, classNames?: string[]) {
+    onStartCreatingNewNode(name: string, factory: () => Node, pos: Vector2d, offset: Vector2d, additionalClassNames?: string[]) {
+        const classNameOrDefault = (label: string) => {
+            if (this.props.config.style && this.props.config.style[label])
+                return this.props.config.style[label];
+            return label;
+        }
         const node = document.createElement('div');
-        node.className = `node collapsed ${classNames ? classNames.join(' ') : ''}`;
+        node.className = classNames(
+            classNameOrDefault('node'),
+            classNameOrDefault('collapsed'),
+            additionalClassNames || []
+        );
         node.style.top = `${pos.y}px`;
         node.style.left = `${pos.x}px`;
         node.style.position = 'absolute';
@@ -877,12 +955,12 @@ export class Editor extends React.Component<Editor.Props, State> {
         const title = document.createElement('span');
         title.innerHTML = name;
         const header = document.createElement('div');
-        header.className = 'header';
+        header.className = classNameOrDefault('header');
         header.appendChild(title);
         node.appendChild(header);
 
         const host = document.createElement('div');
-        host.className = 'react-flow-creating-node';
+        host.className = classNameOrDefault('react-flow-creating-node');
         host.appendChild(node);
 
         document.body.appendChild(host);

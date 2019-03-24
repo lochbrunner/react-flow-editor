@@ -6,6 +6,32 @@ export interface Size {
   height: number;
 }
 
+export interface Style {
+  'react-flow-editor'?: string;
+  dot?: string;
+  input?: string;
+  output?: string;
+  left?: string;
+  right?: string;
+  connections?: string;
+
+  node?: string;
+  collapsed?: string;
+  expander?: string;
+  selected?: string;
+
+  header?: string;
+  icon?: string;
+  'arrow-down'?: string;
+  'arrow-right'?: string;
+
+  body?: string;
+  // alt: react-flow-creating-node
+  'react-flow-creating-node'?: string;
+
+  grid?: string;
+}
+
 export interface Config {
   resolver: (node: Node) => JSX.Element;
   connectionValidator?:
@@ -39,6 +65,10 @@ export interface Config {
    * Disables the zooming feature
    */
   disableZoom?: boolean;
+  /**
+   * Classnames for postcss user
+   */
+  style?: Style;
 }
 
 export interface Node {
