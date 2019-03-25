@@ -5,6 +5,7 @@ import { Vector2d, Rect } from './geometry';
 import { BUTTON_LEFT, KEY_CODE_DELETE, BUTTON_MIDDLE } from './constants';
 import { Connection, InputPort, OutputPort, Size, Port, Node, Config } from './types';
 import classNames from 'classnames';
+import { NodeState, adjust } from './adjust';
 
 declare function setImmediate(func: () => void);
 
@@ -19,13 +20,6 @@ export namespace Editor {
         style?: React.CSSProperties;
         additionalClassName?: string;
     }
-}
-
-interface NodeState {
-    pos: Vector2d;
-    size: Vector2d;
-    offset?: Vector2d;
-    isCollapsed: boolean;
 }
 
 type ItemType = 'node' | 'connection';
@@ -475,6 +469,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         const width = Math.floor((element as any).width.baseVal.value);
         const height = Math.floor((element as any).height.baseVal.value);
 
+        // console.log(`updateEditorSize: ${width}x${width}`);
         if (width < 1 || height < 1) return;
         if (this.state.componentSize.width !== width || this.state.componentSize.height !== height)
             setImmediate(() => this.setState(state => ({ ...state, componentSize: { height, width } })));
@@ -560,12 +555,6 @@ export class Editor extends React.Component<Editor.Props, State> {
             this.editorBoundingRect = rect;
             this.setState(state => state);
         }
-    }
-
-    private classNameOrDefault(label: string) {
-        if (this.props.config.style && this.props.config.style[label])
-            return this.props.config.style[label];
-        return label;
     }
 
     render() {
@@ -697,11 +686,11 @@ export class Editor extends React.Component<Editor.Props, State> {
             return [inputs, outputs];
         };
 
+        const newNodes = adjust(state.nodesState, state.componentSize, props.nodes);
+
+        newNodes.forEach((value, key) => state.nodesState.set(key, value));
+
         const nodes = props.nodes.map(node => {
-            if (!state.nodesState.has(node.id)) {
-                // No nodes added from by the host
-                state.nodesState.set(node.id, { isCollapsed: true, pos: node.position || { x: 0, y: 0 }, size: { x: 100, y: 100 } });
-            }
             const nodeState = state.nodesState.get(node.id);
             const isCollapsed = node.isCollapsed !== undefined ? node.isCollapsed : nodeState.isCollapsed;
             const isSelected = this.state.selection && this.state.selection.id === node.id;

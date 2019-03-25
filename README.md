@@ -108,6 +108,7 @@ export interface Node {
   position?: Vector2d;
   properties?: {display: 'stacked' | 'only-dots'};
   classNames?: string[];
+  style: Style;
 }
 ```
 
@@ -140,6 +141,28 @@ By default we recommend to import the default theme with
 ```
 
 But you can change the style of all components by coping that file and adjust its values.
+
+### Postcss support
+
+When using postcss generated class names just forward them with
+
+```ts
+import * as style from './style.scss';
+
+// ...
+
+const config: Config = {
+    resolver,
+    connectionType: 'bezier',
+    grid: true,
+    demoMode: true,
+    direction: 'we',
+    style
+};
+// ...
+```
+
+See [Example](./example/postcss).
 
 ## Roadmap
 
