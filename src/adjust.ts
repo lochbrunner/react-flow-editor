@@ -44,8 +44,10 @@ export const adjust = (prev: Map<string, NodeState>, size: Size, nodes: Node[]):
           correlations.set(node.id, {left, right});
 
           newNodes.set(node.id, {
-            isCollapsed: node.isCollapsed !== undefined ? node.isCollapsed :
-                                                          true,
+            isCollapsed: (node.initial !== undefined &&
+                          node.initial.isCollapsed !== undefined) ?
+                node.initial.isCollapsed :
+                true,
             pos: node.position || {x: 0, y: 0},
             size: {x: 100, y: 100}
           });
@@ -89,8 +91,8 @@ export const adjust = (prev: Map<string, NodeState>, size: Size, nodes: Node[]):
 
       // Find appropriate location
       // Going column-wise. Stack on collisions
-      const width = size.width * 3;    // Scaling here is a bad hack
-      const height = size.height * 4;  // Scaling here is a bad hack
+      const width = size.width;    // Scaling here is a bad hack
+      const height = size.height;  // Scaling here is a bad hack
       const dx = width / columnToId.size;
       let x = -dx / 2;
       for (const [, columnNodes] of new Map([...columnToId.entries()].sort())) {

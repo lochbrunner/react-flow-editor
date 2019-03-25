@@ -40,11 +40,6 @@ module.exports = {
   },
   module: {
     loaders: [
-      // for ploty.js
-      {
-        test: /\.js$/,
-        loader: 'ify-loader'
-      },
       // .ts, .tsx
       {
         test: /\.tsx?$/,
@@ -69,31 +64,11 @@ module.exports = {
         use: 'html-loader'
       },
       {
-        test: /\.png$/,
+        test: /\.(a?png|svg)$/,
         use: 'url-loader?limit=10000'
       },
       {
-        test: /\.jpg$/,
-        use: 'file-loader'
-      },
-      {
-        test: /\.ttf$/,
-        use: 'file-loader'
-      },
-      {
-        test: /\.woff2$/,
-        use: 'file-loader'
-      },
-      {
-        test: /\.woff$/,
-        use: 'file-loader'
-      },
-      {
-        test: /\.eot$/,
-        use: 'file-loader'
-      },
-      {
-        test: /\.svg$/,
+        test: /\.(jpe?g|gif|bmp|mp3|mp4|ogg|wav|eot|ttf|woff|woff2)$/,
         use: 'file-loader'
       },
     ],
@@ -106,7 +81,7 @@ module.exports = {
     }),
     new webpack.optimize.AggressiveMergingPlugin(), new ExtractTextPlugin({
       filename: 'styles.css',
-      // disable: !isProduction
+      disable: !isProduction
     }),
     new HtmlWebpackPlugin({
       template: 'index.html',
@@ -117,11 +92,10 @@ module.exports = {
   devServer: {
     contentBase: [dataPath],
     hot: true,
-    stats: {
-      warnings: false
-    },
-    openPage: ''
+
   },
+  // https://webpack.js.org/configuration/devtool/
+  devtool: isProduction ? 'hidden-source-map' : 'cheap-module-eval-source-map',
   node: {
     // workaround for webpack-dev-server issue
     // https://github.com/webpack/webpack-dev-server/issues/60#issuecomment-103411179

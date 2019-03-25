@@ -82,6 +82,8 @@ export interface Node {
   properties?: {display: 'stacked' | 'only-dots'};
   classNames?: string[];
   isCollapsed?: boolean;
+
+  initial?: {isCollapsed?: boolean;};
 }
 /**
  * Connection endpoint
