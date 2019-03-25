@@ -62,10 +62,12 @@ export const adjust = (prev: Map<string, NodeState>, size: Size, nodes: Node[]):
       const columnToId: Map<number, string[]> = new Map();
       let initialColumn = 0;
       // Each loop one cluster
+      const nodesKey = newNodes.keys();
       while (idToColumn.size < newNodes.size) {
         const queue: {column: number, id: string}[] = [];
-        const firstNode = newNodes.keys().next().value;
-        queue.push({column: initialColumn, id: firstNode});
+        const nextNode = nodesKey.next().value;
+        if (idToColumn.has(nextNode)) continue;
+        queue.push({column: initialColumn, id: nextNode});
         while (queue.length > 0) {
           const item = queue.shift();
           idToColumn.set(item.id, item.column);
