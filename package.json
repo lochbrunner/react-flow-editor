@@ -26,17 +26,17 @@
     },
     "dependencies": {
         "classnames": "^2.2.6",
-        "lodash": "^4.17.15",
-        "react": "^16.8.5"
+        "lodash": "^4.17.20",
+        "react": "^16.13.1"
     },
     "peerDependencies": {
-        "react": "^16.8.5"
+        "react": "^16.13.1"
     },
     "devDependencies": {
-        "@types/classnames": "^2.2.7",
-        "@types/react": "^16.8.8",
-        "copyfiles": "^2.1.0",
-        "tslint": "^5.14.0",
-        "typescript": "^3.3.4000"
+        "@types/classnames": "^2.2.10",
+        "@types/react": "^16.9.49",
+        "copyfiles": "^2.3.0",
+        "tslint": "^6.1.3",
+        "typescript": "^4.0.2"
     }
 }
