@@ -33,10 +33,10 @@ const nodes: Node[] = [
 }];
 
 // Renders the body of each node
-function resolver(payload: any): JSX.Element {
-    if (payload.type === '') return <h2 />;
+function resolver(data: any): JSX.Element {
+    if (data.type === '') return <h2 />;
     return (
-        <p>{payload}</p>
+        <p>{data.payload.h1}</p>
     );
 }
 
@@ -82,16 +82,16 @@ export interface Config {
 }
 ```
 
-Property | Description
---- | ---
-`resolver` | A function returning a React component which gets placed into the node
-`connectionValidator` | A function which evaluates if a possible connection might be valid or not
-`onChanged` | A callback which gets called when the flow graph changed
-`connectionType` | The geometry type of the connection lines between the nodes
-`grid` | Specifies if the grid should be rendered or not (Default is `true`). Optional specifies distances between the lines (`size`). Default is 18.
-`connectionAnchorsLength` | Specifies the langth of the anker when using `bezier` as `connectionType`.
-`direction` | Specifies the orientation of the input and output ports. Default is `we`.
-`demoMode` | If this set to true, the Editor takes care of updating the nodes in the props. Be carful using this in production.
+| Property                  | Description                                                                                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolver`                | A function returning a React component which gets placed into the node                                                                       |
+| `connectionValidator`     | A function which evaluates if a possible connection might be valid or not                                                                    |
+| `onChanged`               | A callback which gets called when the flow graph changed                                                                                     |
+| `connectionType`          | The geometry type of the connection lines between the nodes                                                                                  |
+| `grid`                    | Specifies if the grid should be rendered or not (Default is `true`). Optional specifies distances between the lines (`size`). Default is 18. |
+| `connectionAnchorsLength` | Specifies the langth of the anker when using `bezier` as `connectionType`.                                                                   |
+| `direction`               | Specifies the orientation of the input and output ports. Default is `we`.                                                                    |
+| `demoMode`                | If this set to true, the Editor takes care of updating the nodes in the props. Be carful using this in production.                           |
 
 ### Nodes
 
