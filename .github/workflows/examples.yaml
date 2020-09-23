@@ -1,0 +1,46 @@
+name: examples
+
+on: [push, pull_request]
+
+jobs:
+  build-npm:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x]
+        example: [simple]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies of library ${{ matrix.example }}
+        run: npm install
+      - name: Build library ${{ matrix.example }}
+        run: npm run build
+      - name: Install dependencies of example ${{ matrix.example }}
+        run: (cd example/${{ matrix.example }} && npm install)
+      - name: Building example ${{ matrix.example }}
+        run: (cd example/${{ matrix.example }} && npm run build)
+
+  build-yarn:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies of example ${{ matrix.example }}
+        run: (cd example/${{ matrix.example }} && yarn --frozen-lockfile)
+      - name: Building example ${{ matrix.example }}
+        run: (cd example/${{ matrix.example }} && yarn build)
+    

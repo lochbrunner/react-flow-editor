@@ -3,6 +3,8 @@
 [![GitHub issues](https://img.shields.io/github/issues/lochbrunner/react-flow-editor.svg)](https://github.com/lochbrunner/react-flow-editor/issues)
 ![David](https://img.shields.io/david/lochbrunner/react-flow-editor.svg)
 ![David](https://img.shields.io/david/dev/lochbrunner/react-flow-editor.svg)
+![lib](https://github.com/lochbrunner/react-flow-editor/workflows/lib/badge.svg)
+![examples](https://github.com/lochbrunner/react-flow-editor/workflows/examples/badge.svg)
 
 # Graph editor
 
