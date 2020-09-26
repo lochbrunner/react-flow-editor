@@ -9,7 +9,9 @@ jobs:
     strategy:
       matrix:
         node-version: [10.x, 12.x]
-        example: [simple]
+        example: 
+          - simple
+          - postcss
 
     steps:
       - uses: actions/checkout@v2
@@ -17,9 +19,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install dependencies of library ${{ matrix.example }}
+      - name: Install dependencies of library
         run: npm install
-      - name: Build library ${{ matrix.example }}
+      - name: Build library
         run: npm run build
       - name: Install dependencies of example ${{ matrix.example }}
         run: (cd example/${{ matrix.example }} && npm install)

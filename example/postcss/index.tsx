@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+const ReactDOM = require('react-dom');
 import { Editor, Node, Config } from 'react-flow-editor';
 
 import * as style from './index.scss';

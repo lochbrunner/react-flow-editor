@@ -9,15 +9,9 @@ var outPath = path.join(__dirname, '../../docs/simple');
 
 // plugins
 var HtmlWebpackPlugin = require('html-webpack-plugin');
-// var ExtractTextPlugin = require('extract-text-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const ReactRefreshWebpackPlugin =
     require('@pmmmwh/react-refresh-webpack-plugin');
-
-// const extractSass = new MiniCssExtractPlugin({
-//   filename: '[name].[contenthash].css',
-//   disable: process.env.NODE_ENV === 'development'
-// });
 
 module.exports = {
   context: sourcePath,
