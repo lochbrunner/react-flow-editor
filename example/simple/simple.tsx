@@ -29,11 +29,34 @@ class Log extends React.Component<LogProps, LogState> {
     }
 }
 
+type NodeAttributesProps = { subscribe: (update: (node: Node | null) => void) => void };
+type NodeAttributesState = { node: Node | null };
+class NodeAttributes extends React.Component<NodeAttributesProps, NodeAttributesState> {
+    constructor(props: any) {
+        super(props);
+        this.state = { node: null };
+        props.subscribe(this.update.bind(this));
+    }
+
+    private update(node: Node | null) {
+        this.setState({ node: node });
+    }
+
+    render() {
+        return (
+            <div>
+                <h2>Node Attributes</h2>
+                <p>{this.state.node === null ? 'No node selected' : 'Data: ' + JSON.stringify(this.state.node.payload.data)}</p>
+            </div>
+        );
+    }
+}
+
 const node1Factory = (connections?: { input: (Connection | Connection[])[] }) => ({
     name: 'Node 1',
     id: 'Node_1',
     type: 'node-type-1',
-    payload: { h1: 'hello' },
+    payload: { h1: 'hello', data: { custom: 'data 1' } },
     inputs: [{
         connection: connections ? connections.input[0] : [],
         name: 'input 1',
@@ -46,7 +69,7 @@ const node2Factory = (connections?: { input: (Connection | Connection[])[], outp
     name: 'Node 2',
     id: 'Node_2',
     type: 'node-type-2',
-    payload: { h1: 'world' },
+    payload: { h1: 'world', data: { custom: 'data 2' } },
     inputs: [
         { connection: connections ? connections.input[0] : [], name: 'input 1' },
         { connection: connections ? connections.input[1] : [], name: 'input 2' },
@@ -63,7 +86,7 @@ const node3Factory = (connections?: { output: (Connection | Connection[])[] }) =
     name: 'Node 3',
     id: 'Node_3',
     type: 'node-type-3',
-    payload: { h1: '!' },
+    payload: { h1: '!', data: { } },
     inputs: [],
     outputs: [{ connection: connections ? connections.output[0] : [], name: 'output 1' }]
 });
@@ -95,6 +118,7 @@ function resolver(node: Node): JSX.Element {
 }
 
 let log: (log: string) => void = undefined;
+let attributes: (node: Node | null) => void = undefined;
 const onChanged: Config['onChanged'] = data => {
     if (log === undefined) return;
     if (data.type === 'ConnectionRemoved')
@@ -107,6 +131,14 @@ const onChanged: Config['onChanged'] = data => {
         log(`New connection between nodes '${data.input.nodeId}' [${data.input.port}]  and '${data.output.nodeId}' [${data.output.port}] created.`);
     else if (data.type === 'NodeCollapseChanged')
         log(`Collapse state of Node '${data.id}' is now ${data.shouldBeCollapsed}.`);
+    else if (data.type === 'NodeSelected') {
+        log(`Node selected: '${data.node.id}'.`);
+        attributes(data.node);
+    }
+    else if (data.type === 'NodeDeselected') {
+        log(`Node deselected.`);
+        attributes(null);
+    }
 };
 
 const config: Config = {
@@ -127,6 +159,9 @@ ReactDOM.render(
         </div>
         <Log subscribe={update => log = update} />
         <Editor config={config} nodes={nodes} />
+        <div className="node-attributes">
+            <NodeAttributes subscribe={update => attributes = update} />
+        </div>
     </div>,
     document.getElementById('root')
 );

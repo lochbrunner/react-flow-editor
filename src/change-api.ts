@@ -37,5 +37,14 @@ export interface NodeCollapseChanged {
   shouldBeCollapsed: boolean;
 }
 
+export interface NodeSelected {
+  node: Node,
+  type: 'NodeSelected';
+}
+
+export interface NodeDeselected {
+  type: 'NodeDeselected';
+}
+
 export type ChangeAction = NodeRemoved|ConnectionRemoved|ConnectionCreated|
-    NodeCreated|NodeCollapseChanged;
+    NodeCreated|NodeCollapseChanged|NodeSelected|NodeDeselected;
