@@ -180,7 +180,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                 const node = this.props.nodes.find(n => n.id === id);
                 config.onChanged({ type: 'NodeSelected', node: node}, updateState);
             }
-            else if (config.onChanged && type === undefined)
+            else if (config.onChanged && type === null)
                 config.onChanged({ type: 'NodeDeselected' }, updateState);
             if (config.onChanged === undefined || config.demoMode)
                 updateState();
