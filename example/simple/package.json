@@ -1,6 +1,6 @@
 {
   "name": "react-flow-editor-example",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Example for react-flow-editor",
   "scripts": {
     "start": "webpack-dev-server --debug --devtool cheap-module-source-map --output-pathinfo --history-api-fallback --hot --inline --progress --colors --port 3001 --open",
