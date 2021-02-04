@@ -42,7 +42,7 @@
     "url-loader": "^0.6.2",
     "webpack": "^3.8.1",
     "bootstrap-sass": "^3.4.1",
-    "webpack-dev-server": "^2.9.4"
+    "webpack-dev-server": "^3.1.11"
   },
   "dependencies": {
     "lodash": "^4.17.4",
