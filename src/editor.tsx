@@ -7,8 +7,6 @@ import { Connection, InputPort, OutputPort, Size, Port, Node, Config } from './t
 import classNames from 'classnames';
 import { NodeState, adjust } from './adjust';
 
-declare function setImmediate(func: () => void);
-
 //#region "Type definitions"
 
 const compareConnections = (a: Connection) => (b: Connection) => a.port === b.port && a.nodeId === b.nodeId;
@@ -169,7 +167,7 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     //#region "User interaction"
 
-    private select(type: ItemType|null, id: string|null) {
+    private select(type: ItemType | null, id: string | null) {
         if (!this.state.selection || this.state.selection.id !== id) {
             const updateState = () =>
                 this.setState(state => {
@@ -178,7 +176,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             const { config } = this.props;
             if (config.onChanged && type === 'node') {
                 const node = this.props.nodes.find(n => n.id === id);
-                config.onChanged({ type: 'NodeSelected', node: node}, updateState);
+                config.onChanged({ type: 'NodeSelected', node: node }, updateState);
             }
             else if (config.onChanged && type === null)
                 config.onChanged({ type: 'NodeDeselected' }, updateState);
@@ -461,11 +459,11 @@ export class Editor extends React.Component<Editor.Props, State> {
         if (cached === undefined || !Vector2d.compare(offset, cached)) {
             this.endpointCache.set(key, offset);
             // TODO: Bundle all connection endpoint updates to one this.setState call
-            setImmediate(() =>
+            setTimeout(() =>
                 this.setState(state => {
                     state.connectionState.set(key, offset);
                     return state;
-                }));
+                }), 0);
         }
 
     }
@@ -478,7 +476,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         // console.log(`updateEditorSize: ${width}x${width}`);
         if (width < 1 || height < 1) return;
         if (this.state.componentSize.width !== width || this.state.componentSize.height !== height)
-            setImmediate(() => this.setState(state => ({ ...state, componentSize: { height, width } })));
+            setTimeout(() => this.setState(state => ({ ...state, componentSize: { height, width } })), 0);
     }
 
     private connection(outputConn: Endpoint, inputConn: Endpoint) {
