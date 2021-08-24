@@ -169,11 +169,21 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     //#region "User interaction"
 
-    private select(type: ItemType, id: string) {
+    private select(type: ItemType|null, id: string|null) {
         if (!this.state.selection || this.state.selection.id !== id) {
-            this.setState(state => {
-                return { ...state, selection: { id, type } };
-            });
+            const updateState = () =>
+                this.setState(state => {
+                    return { ...state, selection: { id, type } };
+                });
+            const { config } = this.props;
+            if (config.onChanged && type === 'node') {
+                const node = this.props.nodes.find(n => n.id === id);
+                config.onChanged({ type: 'NodeSelected', node: node}, updateState);
+            }
+            else if (config.onChanged && type === null)
+                config.onChanged({ type: 'NodeDeselected' }, updateState);
+            if (config.onChanged === undefined || config.demoMode)
+                updateState();
         }
     }
 
@@ -403,9 +413,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                         updateProps();
                 }
 
-                this.setState((state) => {
-                    return { ...state, selection: undefined };
-                });
+                this.select(null, null);
             }
         }
     }
@@ -415,9 +423,7 @@ export class Editor extends React.Component<Editor.Props, State> {
             this.currentAction = { type: 'translate', lastPos: { x: e.clientX, y: e.clientY } };
         }
         else if (e.button === BUTTON_LEFT) {
-            this.setState(state => {
-                return { ...state, selection: undefined };
-            });
+            this.select(null, null);
         }
     }
 

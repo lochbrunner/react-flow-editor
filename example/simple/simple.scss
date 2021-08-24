@@ -44,3 +44,14 @@ body {
     height: calc(100% - #{$log-height});
     width: calc(100% - #{$menu-width});
 }
+
+.node-attributes {
+    background-color: $menu-background-color;
+    border-left: 1px solid $border-color;
+    position: absolute;
+    top: 0;
+    bottom: $log-height;
+    right: 0;
+    padding: 20px 10px 10px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}

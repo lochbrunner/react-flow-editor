@@ -9,9 +9,8 @@ jobs:
     strategy:
       matrix:
         node-version: [10.x, 12.x]
-        example: 
+        example:
           - simple
-          - postcss
 
     steps:
       - uses: actions/checkout@v2
@@ -48,4 +47,3 @@ jobs:
         run: (cd example/${{ matrix.example }} && yarn --frozen-lockfile)
       - name: Building example ${{ matrix.example }}
         run: (cd example/${{ matrix.example }} && yarn build)
-    
