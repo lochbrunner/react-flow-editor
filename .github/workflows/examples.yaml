@@ -34,6 +34,9 @@ jobs:
     strategy:
       matrix:
         node-version: [10.x, 12.x]
+        example: 
+          - simple
+          - postcss
 
     steps:
       - uses: actions/checkout@v2

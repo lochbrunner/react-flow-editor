@@ -9,12 +9,9 @@ var outPath = path.join(__dirname, '../../docs/redux');
 
 // plugins
 var HtmlWebpackPlugin = require('html-webpack-plugin');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
-
-const extractSass = new ExtractTextPlugin({
-  filename: '[name].[contenthash].css',
-  disable: process.env.NODE_ENV === 'development'
-});
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const ReactRefreshWebpackPlugin =
+    require('@pmmmwh/react-refresh-webpack-plugin');
 
 module.exports = {
   context: sourcePath,
@@ -27,6 +24,15 @@ module.exports = {
     publicPath: '/',
     filename: 'bundle.js',
   },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        vendor:
+            {chunks: 'initial', name: 'vendor', test: 'vendor', enforce: true},
+      }
+    },
+    runtimeChunk: true
+  },
   target: 'web',
   resolve: {
     extensions: ['.js', '.ts', '.tsx'],
@@ -34,39 +40,34 @@ module.exports = {
     // module
     // https://github.com/Microsoft/TypeScript/issues/11677
     mainFields: ['main'],
-    alias: {
-      inherits$: path.resolve(__dirname, 'node_modules/inherits')
-    }
+    alias: {inherits$: path.resolve(__dirname, 'node_modules/inherits')}
   },
   module: {
-    loaders: [
+    rules: [
       // .ts, .tsx
       {
         test: /\.tsx?$/,
-        use: isProduction ? 'awesome-typescript-loader?module=es6' : ['react-hot-loader', 'awesome-typescript-loader']
+        use: isProduction ? 'awesome-typescript-loader?module=es6' :
+                            ['awesome-typescript-loader']
       },
       // scss
       {
         test: /\.s?css$/,
-        use: extractSass.extract({
-          use: [{
-            loader: 'css-loader'
-          }, {
-            loader: 'sass-loader'
-          }],
-          // use style-loader in development
-          fallback: 'style-loader'
-        })
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader,
+            options: {
+              hmr: process.env.NODE_ENV === 'development',
+            },
+          },
+          'css-loader',
+          'postcss-loader',
+          'sass-loader',
+        ],
       },
       // static assets
-      {
-        test: /\.html$/,
-        use: 'html-loader'
-      },
-      {
-        test: /\.(a?png|svg)$/,
-        use: 'url-loader?limit=10000'
-      },
+      {test: /\.html$/, use: 'html-loader'},
+      {test: /\.(a?png|svg)$/, use: 'url-loader?limit=10000'},
       {
         test: /\.(jpe?g|gif|bmp|mp3|mp4|ogg|wav|eot|ttf|woff|woff2)$/,
         use: 'file-loader'
@@ -74,19 +75,13 @@ module.exports = {
     ],
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'vendor',
-      filename: 'vendor.bundle.js',
-      minChunks: Infinity
+    new webpack.optimize.AggressiveMergingPlugin(),
+    new MiniCssExtractPlugin({
+      filename: !isProduction ? '[name].css' : '[name].[hash].css',
+      chunkFilename: !isProduction ? '[id].css' : '[id].[hash].css',
     }),
-    new webpack.optimize.AggressiveMergingPlugin(), new ExtractTextPlugin({
-      filename: 'styles.css',
-      disable: !isProduction
-    }),
-    new HtmlWebpackPlugin({
-      template: 'index.html',
-    }),
-    extractSass
+    new HtmlWebpackPlugin({template: 'index.html'}),
+    new ReactRefreshWebpackPlugin(),
   ],
   devtool: 'eval-source-map',
   devServer: {
