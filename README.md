@@ -31,6 +31,7 @@ const nodes: Node[] = [
         inputs: [{
             connection: [], name: 'input 1'
         }],
+        type: 'node-type-1',
         outputs: []
 }];
 
