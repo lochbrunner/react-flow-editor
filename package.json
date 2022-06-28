@@ -1,5 +1,5 @@
 {
-    "name": "react-flow-editor",
+    "name": "@kseniass/react-flow-editor",
     "version": "0.6.1",
     "description": "React component which enables creating flow editors with ease",
     "author": {
@@ -8,10 +8,7 @@
     },
     "contributors": [],
     "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/lochbrunner/react-flow-editor/issues"
-    },
-    "homepage": "https://github.com/lochbrunner/react-flow-editor",
+    "homepage": "https://github.com/kseniaSs/react-flow-editor",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "style": "dist/_style.scss",
