@@ -10,7 +10,6 @@
     "lint": "tslint ./client/**/*.{ts,tsx}"
   },
   "author": "",
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/lochbrunner/react-flow-editor/issues"
   },
