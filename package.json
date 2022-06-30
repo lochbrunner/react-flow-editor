@@ -18,8 +18,8 @@
         "style": "copyfiles -u 1 ./src/*.scss ./dist/",
         "lint": "tslint ./{src}/**/*.{ts,tsx}",
         "refresh-all": "npm run refresh-redux && npm run refresh-simple",
-        "refresh-redux": " rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist",
-        "refresh-simple": " rm -rf ./example/simple/node_modules/react-flow-editor/dist && cp -r ./dist ./example/simple/node_modules/react-flow-editor"
+        "refresh-redux": "rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist",
+        "refresh-simple": "rm -rf ./example/simple/node_modules/react-flow-editor/dist && cp -r ./dist ./example/simple/node_modules/react-flow-editor"
     },
     "dependencies": {
         "classnames": "^2.2.6",
