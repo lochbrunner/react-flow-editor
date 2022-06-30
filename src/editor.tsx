@@ -570,7 +570,6 @@ export class Editor extends React.Component<Editor.Props, State> {
     }
 
     render() {
-        console.log('573')
         const workingConnection = (info: WorkItemConnection) => {
             return this.connectionPath(info.output, info.input);
         };
