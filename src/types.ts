@@ -82,7 +82,7 @@ export interface Node {
   properties?: {display: 'stacked' | 'only-dots'};
   classNames?: string[];
   isCollapsed?: boolean;
-
+  children?: React.ReactNode
   initial?: {isCollapsed?: boolean;};
 }
 /**

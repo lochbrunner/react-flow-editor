@@ -20,10 +20,18 @@ export namespace Editor {
     }
 }
 
-type ItemType = 'node' | 'connection';
+enum ItemType {
+    node = 'node',
+    connection = 'connection'
+}
+
+enum ConnectionType {
+    input = 'input',
+    output = 'output'
+}
 
 interface WorkItemConnection {
-    type: 'connection';
+    type: ItemType.connection;
     input: Vector2d;
     output: Vector2d;
 }
@@ -41,7 +49,7 @@ type State = {
 export interface Endpoint {
     nodeId: string;
     port: number;
-    kind: 'input' | 'output';
+    kind: ConnectionType;
     additionalClassName?: string[];
     notes?: string;
     name?: string;
@@ -50,7 +58,7 @@ export interface Endpoint {
 class EndpointImpl implements Endpoint {
     nodeId: string;
     port: number;
-    kind: 'input' | 'output';
+    kind: ConnectionType;
     name?: string;
     additionalClassName?: string[];
 
