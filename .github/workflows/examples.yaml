@@ -18,6 +18,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Install lib dependencies
+        run: yarn --frozen-lockfile
+      - name: Build lib
+        run: yarn build
       - name: Install dependencies of example ${{ matrix.example }}
         run: (cd example/${{ matrix.example }} && yarn --frozen-lockfile)
       - name: Building example ${{ matrix.example }}
