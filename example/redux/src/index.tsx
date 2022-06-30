@@ -1,5 +1,3 @@
-/// <reference types="react" />
-
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { Provider, connect } from "react-redux"
@@ -8,7 +6,7 @@ import { configureStore } from "./store"
 import * as Actions from "./actions"
 import "./redux.scss"
 
-import { Editor, Node, Config, MenuItem } from "react-flow-editor"
+import { Editor, Node, Config, MenuItem } from "@kseniass/react-flow-editor"
 import { RootState } from "./reducers"
 import { bindActionCreators } from "redux"
 
