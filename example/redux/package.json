@@ -9,7 +9,7 @@
     "dev": "vite serve",
     "lint": "tslint ./client/**/*.{ts,tsx}"
   },
-  "author": "",
+  "author": "Matthias Lochbrunner",
   "bugs": {
     "url": "https://github.com/lochbrunner/react-flow-editor/issues"
   },
