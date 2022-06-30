@@ -9,6 +9,7 @@
   "contributors": [],
   "license": "MIT",
   "homepage": "https://github.com/kseniaSs/react-flow-editor",
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "style": "dist/_style.scss",
