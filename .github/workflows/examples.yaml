@@ -11,6 +11,7 @@ jobs:
         node-version: [14.x]
         example:
           - simple
+          - redux
 
     steps:
       - uses: actions/checkout@v2
