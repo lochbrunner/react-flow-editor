@@ -59,13 +59,12 @@ const node1Factory = (connections?: { input: (Connection | Connection[])[] }) =>
   id: "Node_1",
   type: "node-type-1",
   payload: { h1: "hello", data: { custom: "data 1" } },
+  children: <div>Simple children</div>,
+  childrenCollapsed: <div>Header</div>,
   inputs: [
     {
       connection: connections ? connections.input[0] : [],
-      name: "input 1",
-      renderer: () => (
-        <input style={{ width: "80px" }} type="range" min="1" max="100" className="slider" />
-      )
+      name: "input 1"
     }
   ],
   outputs: []
@@ -152,6 +151,7 @@ const onChanged: Config["onChanged"] = (data) => {
 const config: Config = {
   resolver,
   connectionType: "bezier",
+  dragHandler: "body",
   onChanged,
   grid: true,
   demoMode: true,

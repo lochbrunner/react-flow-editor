@@ -20,10 +20,18 @@ export namespace Editor {
     }
 }
 
-type ItemType = 'node' | 'connection';
+enum ItemType {
+    node = 'node',
+    connection = 'connection'
+}
+
+enum ConnectionType {
+    input = 'input',
+    output = 'output'
+}
 
 interface WorkItemConnection {
-    type: 'connection';
+    type: ItemType.connection;
     input: Vector2d;
     output: Vector2d;
 }
@@ -41,7 +49,7 @@ type State = {
 export interface Endpoint {
     nodeId: string;
     port: number;
-    kind: 'input' | 'output';
+    kind: ConnectionType;
     additionalClassName?: string[];
     notes?: string;
     name?: string;
@@ -50,7 +58,7 @@ export interface Endpoint {
 class EndpointImpl implements Endpoint {
     nodeId: string;
     port: number;
-    kind: 'input' | 'output';
+    kind: ConnectionType;
     name?: string;
     additionalClassName?: string[];
 
@@ -120,7 +128,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         super(props);
         this.endpointCache = new Map<string, Vector2d>();
         this.state = this.initialState();
-        (window as any).onCreateNode = this.createNewNode.bind(this);
+        // (window as any).onCreateNode = this.createNewNode.bind(this);
         (window as any).onStartCreatingNewNode = this.onStartCreatingNewNode.bind(this);
         // this.editorBoundingRect = { x: 0, y: 0, height: 0, width: 0, bottom: 0, left: 0, top: 0, right: 0 };
     }
@@ -150,13 +158,13 @@ export class Editor extends React.Component<Editor.Props, State> {
             for (let k in node.inputs) {
                 const i = parseInt(k);
                 const inputPos = { x: pos.x, y: pos.y + 100 + i * 100 };
-                const key = EndpointImpl.computeId(node.id, i, 'input');
+                const key = EndpointImpl.computeId(node.id, i, ConnectionType.input);
                 connectionState.set(key, inputPos);
             }
             for (let k in node.outputs) {
                 const i = parseInt(k);
                 const outputPos = { x: pos.x + size.x, y: pos.y + 100 + i * 100 };
-                const key = EndpointImpl.computeId(node.id, i, 'output');
+                const key = EndpointImpl.computeId(node.id, i, ConnectionType.output);
                 connectionState.set(key, outputPos);
             }
         }
@@ -231,11 +239,11 @@ export class Editor extends React.Component<Editor.Props, State> {
 
                 const fixed = Vector2d.add(offset, node.pos);
 
-                if (endpoint.kind === 'input') {
-                    const workingItem: WorkItem = { type: 'connection', input: fixed, output: free };
+                if (endpoint.kind === ConnectionType.input) {
+                    const workingItem: WorkItem = { type: ItemType.connection, input: fixed, output: free };
                     return { ...state, workingItem };
-                } else if (endpoint.kind === 'output') {
-                    const workingItem: WorkItem = { type: 'connection', input: free, output: fixed };
+                } else if (endpoint.kind === ConnectionType.output) {
+                    const workingItem: WorkItem = { type: ItemType.connection, input: free, output: fixed };
                     return { ...state, workingItem };
                 }
             }
@@ -256,10 +264,10 @@ export class Editor extends React.Component<Editor.Props, State> {
     private onCreateConnectionEnded(endpoint: Endpoint, e: React.MouseEvent<HTMLElement>) {
         if (this.currentAction && this.currentAction.type === 'connection') {
             // Create new connection
-            if (this.currentAction.endpoint.kind === 'input') {
+            if (this.currentAction.endpoint.kind === ConnectionType.input) {
                 this.createConnection(this.currentAction.endpoint, endpoint);
             }
-            else if (this.currentAction.endpoint.kind === 'output') {
+            else if (this.currentAction.endpoint.kind === ConnectionType.output) {
                 this.createConnection(endpoint, this.currentAction.endpoint);
             }
         }
@@ -373,8 +381,8 @@ export class Editor extends React.Component<Editor.Props, State> {
                                 .map(o => o.i);
                             for (const peerOutputId of peerOutputsIds) {
                                 correspondingConnections.push({
-                                    input: { kind: 'input', nodeId: nodeToDelete.id, port: inputIndex },
-                                    output: { kind: 'output', nodeId: peerNode.id, port: peerOutputId }
+                                    input: { kind: ConnectionType.input, nodeId: nodeToDelete.id, port: inputIndex },
+                                    output: { kind: ConnectionType.output, nodeId: peerNode.id, port: peerOutputId }
                                 });
                             }
                         }
@@ -392,8 +400,8 @@ export class Editor extends React.Component<Editor.Props, State> {
                                 .map(o => o.i);
                             for (const peerInputId of peerInputsIds) {
                                 correspondingConnections.push({
-                                    input: { kind: 'input', nodeId: peerNode.id, port: peerInputId },
-                                    output: { kind: 'output', nodeId: nodeToDelete.id, port: outputIndex }
+                                    input: { kind: ConnectionType.input, nodeId: peerNode.id, port: peerInputId },
+                                    output: { kind: ConnectionType.output, nodeId: nodeToDelete.id, port: outputIndex }
                                 });
                             }
                         }
@@ -562,7 +570,6 @@ export class Editor extends React.Component<Editor.Props, State> {
     }
 
     render() {
-
         const workingConnection = (info: WorkItemConnection) => {
             return this.connectionPath(info.output, info.input);
         };
@@ -581,6 +588,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         });
 
         const dir = this.props.config.direction || 'we';
+        const dropArea = this.props.config.dragHandler || 'header';
         const dirMapping = dir === 'we' ? { 'input': 'right', 'output': 'left' } : { 'input': 'left', 'output': 'right' };
 
         const properties = (node: Node) => {
@@ -606,7 +614,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                                     title={prop.name} />
                             </div>);
                     };
-                return [...node.inputs.map(dot('input', node.inputs.length)), ...node.outputs.map(dot('output', node.outputs.length))];
+                return [...node.inputs.map(dot(ConnectionType.input, node.inputs.length)), ...node.outputs.map(dot(ConnectionType.output, node.outputs.length))];
 
             } else {
                 const dotClassName = conn => classNames(
@@ -614,6 +622,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                     classNameOrDefault(conn.kind),
                     classNameOrDefault(dirMapping[conn.kind]),
                 );
+                // todo change algorithm, we should choose dot positions
                 const dot = (conn: Endpoint, name: string) =>
                     <div
                         onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
@@ -626,12 +635,12 @@ export class Editor extends React.Component<Editor.Props, State> {
                     const key = EndpointImpl.computeId(node.id, index, kind);
                     return (
                         <div key={key}>
-                            {prop.renderer ? prop.renderer(prop) : prop.name}
+                            {node.children ? node.children : (prop.renderer ? prop.renderer(prop) : prop.name)}
                             {dot({ nodeId: node.id, port: index, kind: kind, name: prop.name }, prop.name)}
                         </div>
                     );
                 };
-                return [...node.inputs.map(mapProp('input')), ...node.outputs.map(mapProp('output'))];
+                return [...node.inputs.map(mapProp(ConnectionType.input)), ...node.outputs.map(mapProp(ConnectionType.output))];
             }
         };
 
@@ -664,13 +673,15 @@ export class Editor extends React.Component<Editor.Props, State> {
                     classNameOrDefault(dirMapping[conn.kind]),
                 );
                 return <div
-                    style={style()}
-                    key={key}
-                    onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
-                    onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
-                    ref={this.setConnectionEndpoint.bind(this, conn)}
-                    className={dotClassName}
-                    title={name} />;
+                        style={style()}
+                        key={key}
+                        onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
+                        onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
+                        ref={this.setConnectionEndpoint.bind(this, conn)}
+                        className={node.childrenCollapsed ? '' : dotClassName}
+                        title={name}>
+                        {node.childrenCollapsed}
+                    </div>;
             };
             const mapProp = (kind: Endpoint['kind'], size: number) => (prop: Port, i: number) => {
                 const key = EndpointImpl.computeId(node.id, i, kind);
@@ -684,8 +695,8 @@ export class Editor extends React.Component<Editor.Props, State> {
                 classNameOrDefault('connections'),
                 classNameOrDefault(dirMapping['output'])
             );
-            const inputs = <div key={node.id + 'inputs'} className={inputsClassNames}>{node.inputs.map(mapProp('input', node.inputs.length))}</div>;
-            const outputs = <div key={node.id + 'outputs'} className={outputsClassNames}>{node.outputs.map(mapProp('output', node.outputs.length))}</div>;
+            const inputs = <div key={node.id + 'inputs'} className={inputsClassNames}>{node.inputs.map(mapProp(ConnectionType.input, node.inputs.length))}</div>;
+            const outputs = <div key={node.id + 'outputs'} className={outputsClassNames}>{node.outputs.map(mapProp(ConnectionType.output, node.outputs.length))}</div>;
 
             return [inputs, outputs];
         };
@@ -716,29 +727,32 @@ export class Editor extends React.Component<Editor.Props, State> {
                 }
             );
             const bodyClassNames = classNameOrDefault('body');
+
             return (
                 <div
                     onClick={this.select.bind(this, 'node', node.id)}
                     key={node.id}
                     style={nodeStyle(nodeState.pos)}
+                    onMouseDown={dropArea === "body" ? this.onDragStarted.bind(this, node.id) : undefined}
                     className={nodeClassNames}>
-                    <div
-                        onMouseDown={this.onDragStarted.bind(this, node.id)}
-                        onDoubleClick={this.toggleExpandNode.bind(this, node.id)}
-                        className={headerClassNames} >
-                        <div className={expanderClassNames}
-                            onClick={this.toggleExpandNode.bind(this, node.id)}
-                            onMouseDown={e => e.stopPropagation()}
-                        >
-                            <div className={iconClassNames} />
-                        </div>
-                        <span>{node.name}</span>
-                        {isCollapsed ? collapsedProperties(node) : ''}
-                    </div>
-                    {isCollapsed ? '' : <div className={bodyClassNames}>
-                        {props.config.resolver(node)}
-                        {properties(node)}
-                    </div>}
+                        <>
+                            <div
+                                onMouseDown={dropArea === "header" ? this.onDragStarted.bind(this, node.id) : undefined}
+                                onDoubleClick={this.toggleExpandNode.bind(this, node.id)}
+                                className={headerClassNames}>
+                                    <div className={expanderClassNames}
+                                         onClick={this.toggleExpandNode.bind(this, node.id)}
+                                         onMouseDown={e => e.stopPropagation()}>
+                                        <div className={iconClassNames}/>
+                                    </div>
+                                    <span>{node.name}</span>
+                                {isCollapsed ? collapsedProperties(node) : ''}
+                            </div>
+                            {isCollapsed ? '' : <div className={bodyClassNames}>
+                                {!node.children && props.config.resolver(node)}
+                                {properties(node)}
+                            </div>}
+                        </>
                 </div>
             );
         });
@@ -766,14 +780,14 @@ export class Editor extends React.Component<Editor.Props, State> {
                         const inputConn: Endpoint = {
                             nodeId: node.id,
                             port: i,
-                            kind: 'input',
+                            kind: ConnectionType.input,
                             additionalClassName: connection.classNames,
                             notes: connection.notes
                         };
                         const outputConn: Endpoint = {
                             nodeId: connection.nodeId,
                             port: connection.port,
-                            kind: 'output',
+                            kind: ConnectionType.output,
                             additionalClassName: oppConnection.classNames,
                             notes: oppConnection.notes
                         };
@@ -792,14 +806,14 @@ export class Editor extends React.Component<Editor.Props, State> {
                     const inputConn: Endpoint = {
                         nodeId: node.id,
                         port: i,
-                        kind: 'input',
+                        kind: ConnectionType.input,
                         additionalClassName: connection.classNames,
                         notes: connection.notes
                     };
                     const outputConn: Endpoint = {
                         nodeId: input.connection.nodeId,
                         port: input.connection.port,
-                        kind: 'output',
+                        kind: ConnectionType.output,
                         additionalClassName: oppConnection.classNames,
                         notes: oppConnection.notes
                     };
