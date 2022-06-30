@@ -37,6 +37,11 @@ export interface Config {
   connectionValidator?:
       (output: {nodeId: string, port: number},
        input: {nodeId: string, port: number}) => boolean;
+  /*
+    Set Drag's area
+    @default header
+   */
+  dragHandler?: "body" | "header";
   /**
    * Callback when changes to the Graph are made by the user
    * Call updateProps, if you want the editor managing the state change
@@ -45,22 +50,22 @@ export interface Config {
 
   /**
    * If this is set, the editor will change the props.
-   * Deprecated: Use the "updateProps" in onChanged instead.
+   * @deprecated Use the "updateProps" in onChanged instead.
    */
   demoMode?: boolean;
   /**
    * Default is 'bezier'
    */
-  connectionType?: 'bezier'|'linear';
+  connectionType?: 'bezier' | 'linear';
   /**
    * Default is true. Which results in a grid.size of 18
    */
-  grid?: boolean|{size: number};
+  grid?: boolean | {size: number};
   connectionAnchorsLength?: number;
   /**
    * Default is 'we'
    */
-  direction?: 'ew'|'we';
+  direction?: 'ew' | 'we';
   /**
    * Disables the zooming feature
    */
@@ -82,7 +87,8 @@ export interface Node {
   properties?: {display: 'stacked' | 'only-dots'};
   classNames?: string[];
   isCollapsed?: boolean;
-
+  childrenCollapsed?: JSX.Element
+  children?: JSX.Element
   initial?: {isCollapsed?: boolean;};
 }
 /**
