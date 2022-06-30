@@ -1,6 +1,6 @@
 {
   "name": "react-flow-editor-example",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Example for react-flow-editor",
   "type": "module",
   "main": "src/index.html",
@@ -23,9 +23,9 @@
     "vite-plugin-html": "^3.2.0"
   },
   "dependencies": {
+    "@kseniass/react-flow-editor": "file:../../",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-flow-editor": "file:../../",
     "sass": "^1.53.0"
   },
   "resolutions": {
