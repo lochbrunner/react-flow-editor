@@ -1,6 +1,6 @@
 {
   "name": "react-flow-editor-example",
-  "version": "1.0.1",
+  "version": "0.0.0",
   "description": "Example for react-flow-editor",
   "type": "module",
   "main": "src/index.html",

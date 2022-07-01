@@ -1,6 +1,6 @@
 {
   "name": "react-flow-editor--redux-demo",
-  "version": "1.0.1",
+  "version": "0.0.0",
   "description": "Demo for open go bot",
   "type": "module",
   "main": "src/index.html",
