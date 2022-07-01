@@ -678,7 +678,7 @@ export class Editor extends React.Component<Editor.Props, State> {
           const key = EndpointImpl.computeId(node.id, index, kind)
           return (
             <div key={key}>
-              {node.children ? null : (prop.renderer ? prop.renderer(prop) : prop.name)}
+              {node.children ? null : prop.renderer ? prop.renderer(prop) : prop.name}
               {dot({ nodeId: node.id, port: index, kind: kind, name: prop.name }, prop.name)}
             </div>
           )
@@ -796,10 +796,14 @@ export class Editor extends React.Component<Editor.Props, State> {
                   <span>{node.name}</span>
                 </>
               )}
-              {isCollapsed ? <div>
-                {node.childrenCollapsed}
-                {collapsedProperties(node)}
-              </div> : ""}
+              {isCollapsed ? (
+                <div>
+                  {node.childrenCollapsed}
+                  {collapsedProperties(node)}
+                </div>
+              ) : (
+                ""
+              )}
             </div>
             {isCollapsed ? (
               ""

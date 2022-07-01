@@ -65,7 +65,7 @@ const node1Factory = (connections?: { input: (Connection | Connection[])[] }) =>
     {
       connection: connections ? connections.input[0] : [],
       name: "input 2"
-    },
+    }
   ],
   outputs: []
 })
