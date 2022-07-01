@@ -751,62 +751,67 @@ export class Editor extends React.Component<Editor.Props, State> {
 
     newNodes.forEach((value, key) => state.nodesState.set(key, value))
 
-        const nodes = props.nodes.map(node => {
-            const nodeState = state.nodesState.get(node.id);
-            const isCollapsed = node.isCollapsed !== undefined ? node.isCollapsed : nodeState.isCollapsed;
-            const isSelected = this.state.selection && this.state.selection.id === node.id;
-            const nodeClassNames = classNames(
-                classNameOrDefault('node'),
-                {
-                    [classNameOrDefault('collapsed')]: isCollapsed,
-                    [classNameOrDefault('selected')]: isSelected
-                },
-                node.classNames || []
-            );
-            const headerClassNames = node.childrenCollapsed ? '' : classNameOrDefault('header');
-            const expanderClassNames = classNameOrDefault('expander');
-            const iconClassNames = classNames(
-                classNameOrDefault('icon'),
-                {
-                    [classNameOrDefault('arrow-down')]: isCollapsed,
-                    [classNameOrDefault('arrow-right')]: !isCollapsed,
-                }
-            );
-            const bodyClassNames = classNameOrDefault('body');
+    const nodes = props.nodes.map((node) => {
+      const nodeState = state.nodesState.get(node.id)
+      const isCollapsed = node.isCollapsed !== undefined ? node.isCollapsed : nodeState.isCollapsed
+      const isSelected = this.state.selection && this.state.selection.id === node.id
+      const nodeClassNames = classNames(
+        classNameOrDefault("node"),
+        {
+          [classNameOrDefault("collapsed")]: isCollapsed,
+          [classNameOrDefault("selected")]: isSelected
+        },
+        node.classNames || []
+      )
+      const headerClassNames = node.childrenCollapsed ? "" : classNameOrDefault("header")
+      const expanderClassNames = classNameOrDefault("expander")
+      const iconClassNames = classNames(classNameOrDefault("icon"), {
+        [classNameOrDefault("arrow-down")]: isCollapsed,
+        [classNameOrDefault("arrow-right")]: !isCollapsed
+      })
+      const bodyClassNames = classNameOrDefault("body")
 
-            return (
-                <div
-                    onClick={this.select.bind(this, 'node', node.id)}
-                    key={node.id}
-                    style={nodeStyle(nodeState.pos)}
-                    onMouseDown={dropArea === "body" ? this.onDragStarted.bind(this, node.id) : undefined}
-                    onDoubleClick={dropArea === "body" ? this.toggleExpandNode.bind(this, node.id) : undefined}
-                    className={nodeClassNames}>
-                        <>
-                            <div
-                                onMouseDown={dropArea === "header" ? this.onDragStarted.bind(this, node.id) : undefined}
-                                onDoubleClick={dropArea === "header" ? this.toggleExpandNode.bind(this, node.id) : undefined}
-                                className={headerClassNames}>
-                                    {!node.children &&
-                                        <>
-                                            <div className={expanderClassNames}
-                                                 onClick={this.toggleExpandNode.bind(this, node.id)}
-                                                 onMouseDown={e => e.stopPropagation()}>
-                                                <div className={iconClassNames}/>
-                                            </div>
-                                            <span>{node.name}</span>
-                                        </>
-                                    }
-                                {isCollapsed ? collapsedProperties(node) : ''}
-                            </div>
-                            {isCollapsed ? '' : <div className={bodyClassNames}>
-                                {!node.children && props.config.resolver(node)}
-                                {properties(node)}
-                            </div>}
-                        </>
-                </div>
-            );
-        });
+      return (
+        <div
+          onClick={this.select.bind(this, "node", node.id)}
+          key={node.id}
+          style={nodeStyle(nodeState.pos)}
+          onMouseDown={dropArea === "body" ? this.onDragStarted.bind(this, node.id) : undefined}
+          onDoubleClick={dropArea === "body" ? this.toggleExpandNode.bind(this, node.id) : undefined}
+          className={nodeClassNames}
+        >
+          <>
+            <div
+              onMouseDown={dropArea === "header" ? this.onDragStarted.bind(this, node.id) : undefined}
+              onDoubleClick={dropArea === "header" ? this.toggleExpandNode.bind(this, node.id) : undefined}
+              className={headerClassNames}
+            >
+              {!node.children && (
+                <>
+                  <div
+                    className={expanderClassNames}
+                    onClick={this.toggleExpandNode.bind(this, node.id)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <div className={iconClassNames} />
+                  </div>
+                  <span>{node.name}</span>
+                </>
+              )}
+              {isCollapsed ? collapsedProperties(node) : ""}
+            </div>
+            {isCollapsed ? (
+              ""
+            ) : (
+              <div className={bodyClassNames}>
+                {!node.children && props.config.resolver(node)}
+                {properties(node)}
+              </div>
+            )}
+          </>
+        </div>
+      )
+    })
 
     // Find all connections
     const connections: { out: Endpoint; in: Endpoint }[] = []
