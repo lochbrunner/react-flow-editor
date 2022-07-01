@@ -433,7 +433,7 @@ export class Editor extends React.Component<Editor.Props, State> {
   private onMouseGlobalDown(e: React.MouseEvent<HTMLElement>) {
     if (e.button === BUTTON_MIDDLE) {
       this.currentAction = { type: "translate", lastPos: { x: e.clientX, y: e.clientY } }
-    } else if (e.button === BUTTON_LEFT) {
+    } else if (e.button === BUTTON_LEFT && !(e.target as HTMLElement).closest(".selected")) {
       this.select(null, null)
     }
   }
