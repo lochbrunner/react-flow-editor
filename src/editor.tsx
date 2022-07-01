@@ -717,7 +717,7 @@ export class Editor extends React.Component<Editor.Props, State> {
                 },
                 node.classNames || []
             );
-            const headerClassNames = classNameOrDefault('header');
+            const headerClassNames = node.childrenCollapsed ? '' : classNameOrDefault('header');
             const expanderClassNames = classNameOrDefault('expander');
             const iconClassNames = classNames(
                 classNameOrDefault('icon'),
@@ -734,18 +734,23 @@ export class Editor extends React.Component<Editor.Props, State> {
                     key={node.id}
                     style={nodeStyle(nodeState.pos)}
                     onMouseDown={dropArea === "body" ? this.onDragStarted.bind(this, node.id) : undefined}
+                    onDoubleClick={dropArea === "body" ? this.toggleExpandNode.bind(this, node.id) : undefined}
                     className={nodeClassNames}>
                         <>
                             <div
                                 onMouseDown={dropArea === "header" ? this.onDragStarted.bind(this, node.id) : undefined}
-                                onDoubleClick={this.toggleExpandNode.bind(this, node.id)}
+                                onDoubleClick={dropArea === "header" ? this.toggleExpandNode.bind(this, node.id) : undefined}
                                 className={headerClassNames}>
-                                    <div className={expanderClassNames}
-                                         onClick={this.toggleExpandNode.bind(this, node.id)}
-                                         onMouseDown={e => e.stopPropagation()}>
-                                        <div className={iconClassNames}/>
-                                    </div>
-                                    <span>{node.name}</span>
+                                    {!node.children &&
+                                        <>
+                                            <div className={expanderClassNames}
+                                                 onClick={this.toggleExpandNode.bind(this, node.id)}
+                                                 onMouseDown={e => e.stopPropagation()}>
+                                                <div className={iconClassNames}/>
+                                            </div>
+                                            <span>{node.name}</span>
+                                        </>
+                                    }
                                 {isCollapsed ? collapsedProperties(node) : ''}
                             </div>
                             {isCollapsed ? '' : <div className={bodyClassNames}>
