@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 
-import { Editor, Node, Config, MenuItem, Connection } from "react-flow-editor"
+import { Editor, Node, Config, MenuItem, Connection } from "@kseniass/react-flow-editor"
 import "./simple.scss"
 
 type LogProps = { subscribe: (update: (log: string) => void) => void }

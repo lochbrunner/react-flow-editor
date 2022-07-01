@@ -1,6 +1,6 @@
 // @import "../node_modules/react-flow-editor/dist/default-theme.scss";
 $selected-color: #fda;
-$border-color:#eee;
+$border-color: #eee;
 $node-border-width: 1px;
 $node-border-width-selected: 2px;
 
@@ -26,93 +26,92 @@ $border-radius-collapsed: 0px;
 
 $collapse-animation-duration: 0.4s;
 
-$icon-color:#777;
+$icon-color: #777;
 
 $node-transitions: box-shadow 0.2s ease-in-out;
 
 .react-flow-editor {
-    .node {
-        box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
+  .node {
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
 
-        &:hover,
-        &.selected {
-            box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 18px 0px;
-
-        }
+    &:hover,
+    &.selected {
+      box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 18px 0px;
     }
+  }
 }
 
-@import "../node_modules/react-flow-editor/dist/style";
+@import "../node_modules/@kseniass/react-flow-editor/dist/_style";
 
 body {
-    margin: 0;
+  margin: 0;
 }
 
 .react-flow-editor {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
 
-    svg>path.connection.invalid {
-        stroke: #f88
-    }
+  svg > path.connection.invalid {
+    stroke: #f88;
+  }
 }
 
 .node.red {
-    border-color: #fdd;
+  border-color: #fdd;
 
-    >.header {
-        background-color: #fff7f7;
-    }
+  > .header {
+    background-color: #fff7f7;
+  }
 }
 
 .node.green {
-    border-color: #dfd;
+  border-color: #dfd;
 
-    >.header {
-        background-color: #f7fff7;
-    }
+  > .header {
+    background-color: #f7fff7;
+  }
 }
 
 .node.blue {
-    border-color: #ddf;
+  border-color: #ddf;
 
-    >.header {
-        background-color: #f7f7ff;
-    }
+  > .header {
+    background-color: #f7f7ff;
+  }
 }
 
 .menu {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    height: 20px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  height: 20px;
 }
 
 .flow-menu {
-    position: absolute;
-    top: 10%;
-    left: 7px;
-    padding: 20px 3px;
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 10px 0px;
-    background: #fff;
+  position: absolute;
+  top: 10%;
+  left: 7px;
+  padding: 20px 3px;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 10px 0px;
+  background: #fff;
 }
 
 .react-flow-creating-node,
 .react-flow-editor-menu-item {
-    &.red {
-        border-color: #fdd;
-        background-color: #fff7f7;
-    }
+  &.red {
+    border-color: #fdd;
+    background-color: #fff7f7;
+  }
 
-    &.green {
-        border-color: #dfd;
-        background-color: #f7fff7;
-    }
+  &.green {
+    border-color: #dfd;
+    background-color: #f7fff7;
+  }
 
-    &.blue {
-        border-color: #ddf;
-        background-color: #f7f7ff;
-    }
+  &.blue {
+    border-color: #ddf;
+    background-color: #f7f7ff;
+  }
 }

@@ -310,6 +310,13 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
+"@kseniass/react-flow-editor@file:../..":
+  version "0.6.1"
+  dependencies:
+    classnames "^2.2.6"
+    lodash "^4.17.20"
+    react "^16.13.1"
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.npmjs.org/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -1400,15 +1407,6 @@ react-dom@^16.13.1:
     prop-types "^15.6.2"
     scheduler "^0.19.1"
 
-react-flow-editor@^0.6.1:
-  version "0.6.1"
-  resolved "https://registry.npmjs.org/react-flow-editor/-/react-flow-editor-0.6.1.tgz#75fb392ffa304b0d5ecf3e030dd5adaa59360664"
-  integrity sha512-+1mlfpWnrpMGATviicXvyPXh9qIwD9AhK0yVVuz6jXb+DTrH5K4KbObRrBL4nEDmgrCnvXwrSxF1dM3nKMtT9g==
-  dependencies:
-    classnames "^2.2.6"
-    lodash "^4.17.20"
-    react "^16.13.1"
-
 react-is@^16.3.2, react-is@^16.6.0, react-is@^16.7.0, react-is@^16.8.1, react-is@^16.9.0:
   version "16.13.1"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
@@ -1749,10 +1747,10 @@ tsutils@^2.29.0:
   dependencies:
     tslib "^1.8.1"
 
-typescript@^4.0.3:
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.0.3.tgz#153bbd468ef07725c1df9c77e8b453f8d36abba5"
-  integrity sha512-tEu6DGxGgRJPb/mVPIZ48e69xCn2yRmCgYmDugAVwmJ6o+0u1RI18eO7E7WBTLYLaEVVOhwQmcdhQHweux/WPg==
+typescript@^4.7.4:
+  version "4.7.4"
+  resolved "https://registry.npmjs.org/typescript/-/typescript-4.7.4.tgz#1a88596d1cf47d59507a1bcdfb5b9dfe4d488235"
+  integrity sha512-C0WQT0gezHuw6AdY1M2jxUO83Rjf0HP7Sk1DtXj6j1EwkQNZrHAg2XPWlq62oqEhYvONq5pkC2Y9oPljWToLmQ==
 
 uncontrollable@^7.0.0:
   version "7.1.1"

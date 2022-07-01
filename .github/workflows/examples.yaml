@@ -1,6 +1,6 @@
 name: examples
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   build-yarn:
@@ -8,9 +8,10 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [10.x, 12.x]
+        node-version: [14.x]
         example:
           - simple
+          - redux
 
     steps:
       - uses: actions/checkout@v2
@@ -18,6 +19,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Install lib dependencies
+        run: yarn --frozen-lockfile
+      - name: Build lib
+        run: yarn build
       - name: Install dependencies of example ${{ matrix.example }}
         run: (cd example/${{ matrix.example }} && yarn --frozen-lockfile)
       - name: Building example ${{ matrix.example }}

@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [react({ jsxRuntime: "classic" })],
   root: "src",
   build: {
-    outDir: "../../docs/redux"
+    outDir: "../../../docs/redux"
   }
 })
