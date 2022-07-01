@@ -3,10 +3,11 @@
     "sourceMap": true,
     "target": "es5",
     "jsx": "react",
-    "module": "commonjs",
+    "module": "esNext",
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "esModuleInterop": true,
     "declaration": true,
     "noImplicitAny": false,
     "noImplicitReturns": false,
@@ -14,15 +15,7 @@
     "strictNullChecks": false,
     "outDir": "dist",
     "downlevelIteration": true,
-    "lib": [
-      "es6",
-      "es7",
-      "dom"
-    ]
+    "lib": ["es6", "es7", "dom"]
   },
-  "exclude": [
-    "dist",
-    "example",
-    "node_modules"
-  ]
+  "exclude": ["dist", "example", "node_modules"]
 }

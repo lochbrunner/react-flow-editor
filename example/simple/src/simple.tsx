@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 
-import { Editor, Node, Config, MenuItem, Connection } from "react-flow-editor"
+import { Editor, Node, Config, MenuItem, Connection } from "@kseniass/react-flow-editor"
 import "./simple.scss"
 
 type LogProps = { subscribe: (update: (log: string) => void) => void }
@@ -44,11 +44,7 @@ class NodeAttributes extends React.Component<NodeAttributesProps, NodeAttributes
     return (
       <div>
         <h2>Node Attributes</h2>
-        <p>
-          {this.state.node === null
-            ? "No node selected"
-            : "Data: " + JSON.stringify(this.state.node.payload.data)}
-        </p>
+        <p>{this.state.node === null ? "No node selected" : "Data: " + JSON.stringify(this.state.node.payload.data)}</p>
       </div>
     )
   }

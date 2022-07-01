@@ -1,12 +1,11 @@
-import {ChangeAction} from 'react-flow-editor';
-import {createAction} from 'redux-actions';
+import { ChangeAction } from "@kseniass/react-flow-editor"
+import { createAction } from "redux-actions"
 
-import * as Actions from './constants';
+import * as Actions from "./constants"
 
-export const loadAction = createAction<{}>(Actions.LOAD_DATA);
-export const clearAction = createAction<{}>(Actions.CLEAR_DATA);
-export const addAction = createAction<{}>(Actions.ADD_DATA);
-export const removeAction = createAction<{}>(Actions.REMOVE_DATA);
-export const changeAction = createAction<{}>(Actions.CHANGE_DATA);
-export const editorUpdatesAction =
-    createAction<ChangeAction>(Actions.EDITOR_UPDATES);
+export const loadAction = createAction<{}>(Actions.LOAD_DATA)
+export const clearAction = createAction<{}>(Actions.CLEAR_DATA)
+export const addAction = createAction<{}>(Actions.ADD_DATA)
+export const removeAction = createAction<{}>(Actions.REMOVE_DATA)
+export const changeAction = createAction<{}>(Actions.CHANGE_DATA)
+export const editorUpdatesAction = createAction<ChangeAction>(Actions.EDITOR_UPDATES)

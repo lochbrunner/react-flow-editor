@@ -1,39 +1,42 @@
 {
-    "name": "@kseniass/react-flow-editor",
-    "version": "0.6.1",
-    "description": "React component which enables creating flow editors with ease",
-    "author": {
-        "name": "Matthias Lochbrunner",
-        "email": "matthias_lochbrunner@web.de"
-    },
-    "contributors": [],
-    "license": "MIT",
-    "homepage": "https://github.com/kseniaSs/react-flow-editor",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "style": "dist/_style.scss",
-    "scripts": {
-        "compile": "tsc",
-        "build": "npm run style && npm run compile",
-        "style": "copyfiles -u 1 ./src/*.scss ./dist/",
-        "lint": "tslint ./{src}/**/*.{ts,tsx}",
-        "refresh-all": "npm run refresh-redux && npm run refresh-simple",
-        "refresh-redux": "rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist",
-        "refresh-simple": "rm -rf ./example/simple/node_modules/react-flow-editor/dist && cp -r ./dist ./example/simple/node_modules/react-flow-editor"
-    },
-    "dependencies": {
-        "classnames": "^2.2.6",
-        "lodash": "^4.17.20",
-        "react": "^16.13.1"
-    },
-    "peerDependencies": {
-        "react": "^16.13.1"
-    },
-    "devDependencies": {
-        "@types/classnames": "^2.2.10",
-        "@types/react": "^16.9.49",
-        "copyfiles": "^2.3.0",
-        "tslint": "^6.1.3",
-        "typescript": "^4.0.2"
-    }
+  "name": "@kseniass/react-flow-editor",
+  "version": "0.6.1",
+  "description": "React component which enables creating flow editors with ease",
+  "author": {
+    "name": "Matthias Lochbrunner",
+    "email": "matthias_lochbrunner@web.de"
+  },
+  "contributors": [],
+  "license": "MIT",
+  "homepage": "https://github.com/kseniaSs/react-flow-editor",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "style": "dist/_style.scss",
+  "scripts": {
+    "compile": "tsc",
+    "build": "npm run style && npm run compile",
+    "style": "copyfiles -u 1 ./src/*.scss ./dist/",
+    "lint": "tslint ./{src}/**/*.{ts,tsx}",
+    "prettier": "./node_modules/.bin/prettier . --write",
+    "refresh-all": "npm run refresh-redux && npm run refresh-simple",
+    "refresh-redux": " rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist",
+    "refresh-simple": " rm -rf ./example/simple/node_modules/react-flow-editor/dist && cp -r ./dist ./example/simple/node_modules/react-flow-editor"
+  },
+  "dependencies": {
+    "classnames": "^2.2.6",
+    "lodash": "^4.17.20",
+    "react": "^16.13.1"
+  },
+  "peerDependencies": {
+    "react": "^16.13.1"
+  },
+  "devDependencies": {
+    "@types/classnames": "^2.2.10",
+    "@types/react": "^16.9.49",
+    "copyfiles": "^2.3.0",
+    "prettier": "^2.7.1",
+    "tslint": "^6.1.3",
+    "typescript": "^4.0.2"
+  }
 }
