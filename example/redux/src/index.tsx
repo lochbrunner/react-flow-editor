@@ -44,10 +44,7 @@ const factory = (type: "red" | "green" | "blue") => (): Node => ({
 
 const View = (props: Props) => (
   <div>
-    <Editor
-      config={{ ...config, onChanged: props.actions.editorUpdatesAction }}
-      nodes={props.state.nodes}
-    />
+    <Editor config={{ ...config, onChanged: props.actions.editorUpdatesAction }} nodes={props.state.nodes} />
     <div className="menu">
       <button type="button" onClick={props.actions.loadAction}>
         Load
