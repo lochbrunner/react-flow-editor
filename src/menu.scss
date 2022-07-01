@@ -1,20 +1,20 @@
 .react-flow-editor-menu-item {
-    width: 120px;
-    border-radius: $border-radius-collapsed;
-    margin: 2px;
-    border: $node-border-width solid $node-border-color;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-align: center;
-    padding-top: 7px;
-    padding-bottom: 6px;
-    user-select: none;
-    -moz-user-select: none;
-    cursor: pointer;
-    transition: all 0.4s ease;
-    background-color: $node-background-color;
+  width: 120px;
+  border-radius: $border-radius-collapsed;
+  margin: 2px;
+  border: $node-border-width solid $node-border-color;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  text-align: center;
+  padding-top: 7px;
+  padding-bottom: 6px;
+  user-select: none;
+  -moz-user-select: none;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  background-color: $node-background-color;
 
-    &:hover {
-        border: $node-border-width solid $selected-color;
-        background-color: #fff;
-    }
+  &:hover {
+    border: $node-border-width solid $selected-color;
+    background-color: #fff;
+  }
 }

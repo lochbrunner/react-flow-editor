@@ -86,16 +86,14 @@ const removeConnection = (
 ) => {
   const inputNodeIndex = state.nodes.findIndex((n) => n.id === connection.input.nodeId)
 
-  const inputConnections = state.nodes[inputNodeIndex].inputs[connection.input.port]
-    .connection as Connection[]
+  const inputConnections = state.nodes[inputNodeIndex].inputs[connection.input.port].connection as Connection[]
   const inputConnectionIndex = inputConnections.findIndex(
     (s) => s.nodeId === connection.output.nodeId && s.port === connection.output.port
   )
   inputConnections.splice(inputConnectionIndex, 1)
 
   const outputNodeIndex = state.nodes.findIndex((n) => n.id === connection.output.nodeId)
-  const outputConnections = state.nodes[outputNodeIndex].outputs[connection.output.port]
-    .connection as Connection[]
+  const outputConnections = state.nodes[outputNodeIndex].outputs[connection.output.port].connection as Connection[]
   const outputConnectionIndex = outputConnections.findIndex(
     (s) => s.nodeId === connection.input.nodeId && s.port === connection.input.port
   )
@@ -134,12 +132,8 @@ export const reducer: Reducer<RootState> = (
         nodeId: payload.input.nodeId,
         port: payload.input.port
       }
-      ;(state.nodes[inputIndex].inputs[payload.input.port].connection as Connection[]).push(
-        outputConnection
-      )
-      ;(state.nodes[outputIndex].outputs[payload.output.port].connection as Connection[]).push(
-        inputConnection
-      )
+      ;(state.nodes[inputIndex].inputs[payload.input.port].connection as Connection[]).push(outputConnection)
+      ;(state.nodes[outputIndex].outputs[payload.output.port].connection as Connection[]).push(inputConnection)
     } else if (payload.type === "ConnectionRemoved") {
       removeConnection(state, payload)
     } else if (payload.type === "NodeCreated") {

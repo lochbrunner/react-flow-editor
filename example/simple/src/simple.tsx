@@ -44,11 +44,7 @@ class NodeAttributes extends React.Component<NodeAttributesProps, NodeAttributes
     return (
       <div>
         <h2>Node Attributes</h2>
-        <p>
-          {this.state.node === null
-            ? "No node selected"
-            : "Data: " + JSON.stringify(this.state.node.payload.data)}
-        </p>
+        <p>{this.state.node === null ? "No node selected" : "Data: " + JSON.stringify(this.state.node.payload.data)}</p>
       </div>
     )
   }

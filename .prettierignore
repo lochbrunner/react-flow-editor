@@ -1,0 +1,12 @@
+# Add files here to ignore them from prettier formatting
+
+/dist
+/docs
+/.github
+/coverage
+/public
+/node_modules
+package.json
+package-lock.json
+*.md
+*.mdx
