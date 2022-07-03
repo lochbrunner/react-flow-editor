@@ -3,7 +3,7 @@ name: examples
 on: [push]
 
 jobs:
-  build-yarn:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
