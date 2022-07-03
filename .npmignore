@@ -7,3 +7,5 @@ src
 test
 tsconfig.json
 tslint.json
+.prettierignore
+.prettierrc

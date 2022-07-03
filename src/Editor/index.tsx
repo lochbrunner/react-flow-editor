@@ -1,15 +1,22 @@
 import React from "react"
 import _ from "lodash"
 
-import { Vector2d, Rect } from "./geometry"
+import { Vector2d, Rect } from "../geometry"
 import { BUTTON_LEFT, KEY_CODE_DELETE, BUTTON_MIDDLE } from "./constants"
-import { Connection, InputPort, OutputPort, Size, Port, Node, Config } from "./types"
+import { Connection, Size, Port, Node, Config } from "../types"
 import classNames from "classnames"
-import { NodeState, adjust } from "./adjust"
-
-//#region "Type definitions"
-
-const compareConnections = (a: Connection) => (b: Connection) => a.port === b.port && a.nodeId === b.nodeId
+import { NodeState, adjust } from "../adjust"
+import { ConnectionType, Endpoint, IEndpoint } from "../Endpoint"
+import { ItemType, State, WorkItem, WorkItemConnection } from "./types"
+import {
+  compareConnections,
+  computeConnectionId,
+  epPredicate,
+  extractConnectionFromId,
+  filterIfArray,
+  isEmptyArrayOrUndefined,
+  nodeIdPredicate
+} from "./helpers"
 
 export namespace Editor {
   export interface Props {
@@ -20,105 +27,6 @@ export namespace Editor {
   }
 }
 
-enum ItemType {
-  node = "node",
-  connection = "connection"
-}
-
-enum ConnectionType {
-  input = "input",
-  output = "output"
-}
-
-interface WorkItemConnection {
-  type: ItemType.connection
-  input: Vector2d
-  output: Vector2d
-}
-type WorkItem = WorkItemConnection
-
-type State = {
-  nodesState: Map<string, NodeState>
-  connectionState: Map<string, Vector2d>
-  selection?: { type: ItemType; id: string }
-  workingItem?: WorkItem
-  transformation: { dx: number; dy: number; zoom: number }
-  componentSize: Size
-}
-
-export interface Endpoint {
-  nodeId: string
-  port: number
-  kind: ConnectionType
-  additionalClassName?: string[]
-  notes?: string
-  name?: string
-}
-
-class EndpointImpl implements Endpoint {
-  nodeId: string
-  port: number
-  kind: ConnectionType
-  name?: string
-  additionalClassName?: string[]
-
-  static computeId(nodeId: Endpoint["nodeId"], connectionId: Endpoint["port"], kind: Endpoint["kind"]) {
-    return `${nodeId}_${connectionId}_${kind}`
-  }
-
-  static computeIdIn(conn: Endpoint) {
-    return `${conn.nodeId}_${conn.port}_${conn.kind}`
-  }
-
-  static extractEndpointInfo(id: string): Endpoint {
-    const regex = /(.+)_(\d+)_(input|output)/g
-    const match = regex.exec(id)
-    if (match === null) throw Error(`Illegal id string ${id}`)
-    return { nodeId: match[1], port: parseInt(match[2]), kind: match[3] as any }
-  }
-}
-
-//#endregion "Type definitions"
-//#region "Helper function"
-
-function computeConnectionId(input: Endpoint, output: Endpoint) {
-  return `${EndpointImpl.computeIdIn(input)}__${EndpointImpl.computeIdIn(output)}`
-}
-
-/**
- * The reverse of computeConnectionId
- */
-function extractConnectionFromId(id: string) {
-  const sepIndex = id.indexOf("__")
-  const inputId = id.substr(0, sepIndex)
-  const outputId = id.substr(sepIndex + 2)
-  return {
-    input: EndpointImpl.extractEndpointInfo(inputId),
-    output: EndpointImpl.extractEndpointInfo(outputId)
-  }
-}
-
-function isEmptyArrayOrUndefined(obj) {
-  return obj === undefined || (Array.isArray(obj) && obj.length === 0)
-}
-
-const nodeIdPredicate = (connection: Connection | Connection[]) => (node: Node) =>
-  Array.isArray(connection)
-    ? connection.findIndex((conn) => conn.nodeId === node.id) >= 0
-    : node.id === connection.nodeId
-
-const epPredicate = (nodeId: string, port?: number) => (ep: Port) => {
-  const comp = (testee: Connection) => (port === undefined || testee.port === port) && testee.nodeId === nodeId
-  return Array.isArray(ep.connection) ? ep.connection.findIndex(comp) >= 0 : comp(ep.connection)
-}
-
-function filterIfArray<T>(input: T | T[], predicate: (t: T) => boolean): T {
-  if (input instanceof Array) return input.find(predicate)
-  else return input
-}
-
-//#endregion "Helper function"
-
 export class Editor extends React.Component<Editor.Props, State> {
   private currentAction?:
     | {
@@ -126,7 +34,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         id: string
         type: "node"
       }
-    | { lastPos: Vector2d; endpoint: Endpoint; type: "connection" }
+    | { lastPos: Vector2d; endpoint: IEndpoint; type: "connection" }
     | { lastPos: Vector2d; type: "translate" }
   private endpointCache: Map<string, Vector2d>
   private gridSize?: Size
@@ -136,7 +44,6 @@ export class Editor extends React.Component<Editor.Props, State> {
     super(props)
     this.endpointCache = new Map<string, Vector2d>()
     this.state = this.initialState()
-    // (window as any).onCreateNode = this.createNewNode.bind(this);
     ;(window as any).onStartCreatingNewNode = this.onStartCreatingNewNode.bind(this)
     // this.editorBoundingRect = { x: 0, y: 0, height: 0, width: 0, bottom: 0, left: 0, top: 0, right: 0 };
   }
@@ -165,13 +72,13 @@ export class Editor extends React.Component<Editor.Props, State> {
       for (let k in node.inputs) {
         const i = parseInt(k)
         const inputPos = { x: pos.x, y: pos.y + 100 + i * 100 }
-        const key = EndpointImpl.computeId(node.id, i, ConnectionType.input)
+        const key = Endpoint.computeId(node.id, i, ConnectionType.input)
         connectionState.set(key, inputPos)
       }
       for (let k in node.outputs) {
         const i = parseInt(k)
         const outputPos = { x: pos.x + size.x, y: pos.y + 100 + i * 100 }
-        const key = EndpointImpl.computeId(node.id, i, ConnectionType.output)
+        const key = Endpoint.computeId(node.id, i, ConnectionType.output)
         connectionState.set(key, outputPos)
       }
     }
@@ -233,7 +140,7 @@ export class Editor extends React.Component<Editor.Props, State> {
         const { endpoint } = this.currentAction
         const free = Vector2d.subtract(newPos, this.editorBoundingRect)
 
-        const key = EndpointImpl.computeId(endpoint.nodeId, endpoint.port, endpoint.kind)
+        const key = Endpoint.computeId(endpoint.nodeId, endpoint.port, endpoint.kind)
 
         const offset = this.state.connectionState.get(key)
         const node = this.state.nodesState.get(endpoint.nodeId)
@@ -256,12 +163,12 @@ export class Editor extends React.Component<Editor.Props, State> {
     this.currentAction.lastPos = newPos
   }
 
-  private onCreateConnectionStarted(endpoint: Endpoint, e: React.MouseEvent<HTMLElement>) {
+  private onCreateConnectionStarted(endpoint: IEndpoint, e: React.MouseEvent<HTMLElement>) {
     e.stopPropagation()
     this.currentAction = { lastPos: { x: e.screenX, y: e.screenY }, endpoint, type: "connection" }
   }
 
-  private onCreateConnectionEnded(endpoint: Endpoint, e: React.MouseEvent<HTMLElement>) {
+  private onCreateConnectionEnded(endpoint: IEndpoint, e: React.MouseEvent<HTMLElement>) {
     if (this.currentAction && this.currentAction.type === "connection") {
       // Create new connection
       if (this.currentAction.endpoint.kind === ConnectionType.input) {
@@ -288,7 +195,7 @@ export class Editor extends React.Component<Editor.Props, State> {
       return value
     }
   }
-  private removeConnection(input: Endpoint, output: Endpoint) {
+  private removeConnection(input: IEndpoint, output: IEndpoint) {
     const { nodes } = this.props
     const inputNode = nodes.find((node) => node.id === input.nodeId)
     const outputNode = nodes.find((node) => node.id === output.nodeId)
@@ -303,7 +210,7 @@ export class Editor extends React.Component<Editor.Props, State> {
     )
   }
 
-  private createConnection(input: Endpoint, output: Endpoint) {
+  private createConnection(input: IEndpoint, output: IEndpoint) {
     const { nodes, config } = this.props
     const inputNode = nodes.find((node) => node.id === input.nodeId)
     const outputNode = nodes.find((node) => node.id === output.nodeId)
@@ -369,7 +276,7 @@ export class Editor extends React.Component<Editor.Props, State> {
           const index = this.props.nodes.findIndex((node) => node.id === selection.id)
           // Delete all corresponding connections
           // TODO: Refactor the next two for loops in order to write the code only once
-          const correspondingConnections: { input: Endpoint; output: Endpoint }[] = []
+          const correspondingConnections: { input: IEndpoint; output: IEndpoint }[] = []
           const nodeToDelete = this.props.nodes[index]
           let inputIndex = -1
           for (let input of nodeToDelete.inputs) {
@@ -456,11 +363,11 @@ export class Editor extends React.Component<Editor.Props, State> {
 
   //#endregion "User interaction"
 
-  private setConnectionEndpoint(conn: Endpoint, element: Element) {
+  private setConnectionEndpoint(conn: IEndpoint, element: Element) {
     if (!element) return
     // Only save relative position
     const parentPos = this.state.nodesState.get(conn.nodeId).pos
-    const key = EndpointImpl.computeId(conn.nodeId, conn.port, conn.kind)
+    const key = Endpoint.computeId(conn.nodeId, conn.port, conn.kind)
     const cached = this.endpointCache.get(key)
     const newDomRect: DOMRect = element.getBoundingClientRect() as DOMRect
     const globalOffset: Vector2d = this.editorBoundingRect || { x: 0, y: 0 }
@@ -493,10 +400,10 @@ export class Editor extends React.Component<Editor.Props, State> {
       setTimeout(() => this.setState((state) => ({ ...state, componentSize: { height, width } })), 0)
   }
 
-  private connection(outputConn: Endpoint, inputConn: Endpoint) {
+  private connection(outputConn: IEndpoint, inputConn: IEndpoint) {
     const { nodesState, connectionState } = this.state
-    const inputKey = EndpointImpl.computeId(inputConn.nodeId, inputConn.port, inputConn.kind)
-    const outputKey = EndpointImpl.computeId(outputConn.nodeId, outputConn.port, outputConn.kind)
+    const inputKey = Endpoint.computeId(inputConn.nodeId, inputConn.port, inputConn.kind)
+    const outputKey = Endpoint.computeId(outputConn.nodeId, outputConn.port, outputConn.kind)
     const key = `${outputKey}_${inputKey}`
     const connId = computeConnectionId(inputConn, outputConn)
     const isSelected = this.state.selection && this.state.selection.id === connId
@@ -607,358 +514,6 @@ export class Editor extends React.Component<Editor.Props, State> {
     }
   }
 
-  render() {
-    const workingConnection = (info: WorkItemConnection) => {
-      return this.connectionPath(info.output, info.input)
-    }
-
-    const classNameOrDefault = (label: string) => {
-      if (props.config.style && props.config.style[label]) return props.config.style[label]
-      return label
-    }
-
-    const { props, state } = this
-
-    const nodeStyle = (pos: Vector2d) => ({
-      top: `${pos.y}px`,
-      left: `${pos.x}px`
-    })
-
-    const dir = this.props.config.direction || "we"
-    const dropArea = this.props.config.dragHandler || "header"
-    const dirMapping = dir === "we" ? { input: "right", output: "left" } : { input: "left", output: "right" }
-
-    const properties = (node: Node) => {
-      if (node.properties !== undefined && node.properties.display === "only-dots") {
-        const dot = (kind: Endpoint["kind"], total: number) => (prop: Port, index: number) => {
-          const conn: Endpoint = { nodeId: node.id, port: index, kind: kind, name: prop.name }
-          const site = dirMapping[kind]
-          const style = site === "right" ? { right: "7px" } : {}
-          const dotClassName = classNames(classNameOrDefault("dot"), classNameOrDefault(kind), classNameOrDefault(site))
-          return (
-            <div key={EndpointImpl.computeId(node.id, index, kind)}>
-              <div
-                onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
-                onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
-                ref={this.setConnectionEndpoint.bind(this, conn)}
-                className={dotClassName}
-                style={{
-                  ...style,
-                  position: "absolute",
-                  top: `calc(${(100 * (index + 1)) / (total + 1)}% - 8px)`
-                }}
-                title={prop.name}
-              />
-            </div>
-          )
-        }
-        return [
-          ...node.inputs.map(dot(ConnectionType.input, node.inputs.length)),
-          ...node.outputs.map(dot(ConnectionType.output, node.outputs.length))
-        ]
-      } else {
-        const dotClassName = (conn) =>
-          classNames(
-            classNameOrDefault("dot"),
-            classNameOrDefault(conn.kind),
-            classNameOrDefault(dirMapping[conn.kind])
-          )
-        // todo change algorithm, we should choose dot positions
-        const dot = (conn: Endpoint, name: string) => (
-          <div
-            onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
-            onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
-            ref={this.setConnectionEndpoint.bind(this, conn)}
-            className={dotClassName(conn)}
-            title={name}
-          />
-        )
-
-        const mapProp = (kind: Endpoint["kind"]) => (prop: Port, index: number) => {
-          const key = EndpointImpl.computeId(node.id, index, kind)
-          return (
-            <div key={key}>
-              {node.children ? null : prop.renderer ? prop.renderer(prop) : prop.name}
-              {dot({ nodeId: node.id, port: index, kind: kind, name: prop.name }, prop.name)}
-            </div>
-          )
-        }
-        return [...node.inputs.map(mapProp(ConnectionType.input)), ...node.outputs.map(mapProp(ConnectionType.output))]
-      }
-    }
-
-    const collapsedProperties = (node: Node) => {
-      const dot = (conn: Endpoint, key: string, index: number, size: number, name: string) => {
-        const style = () => {
-          const radius = 20
-          const angle = size === 1 ? 0 : ((index - size / 2 + 0.5) * Math.PI) / 4
-          if (dirMapping[conn.kind] === "right") {
-            const center = { x: -20, y: 1 }
-            return {
-              top: `${center.y + radius * Math.sin(angle)}px`,
-              left: `${center.x + radius * Math.cos(angle)}px`
-            }
-          } else if (dirMapping[conn.kind] === "left") {
-            const center = { x: 0, y: 1 }
-            return {
-              top: `${center.y + radius * Math.sin(angle)}px`,
-              left: `${center.x - radius * Math.cos(angle)}px`
-            }
-          } else {
-            console.warn(`Unknown dir ${conn.kind}`)
-          }
-        }
-        const dotClassName = classNames(
-          classNameOrDefault("dot"),
-          classNameOrDefault(conn.kind),
-          classNameOrDefault(dirMapping[conn.kind])
-        )
-        return (
-          <div
-            style={style()}
-            key={key}
-            onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
-            onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
-            ref={this.setConnectionEndpoint.bind(this, conn)}
-            className={node.childrenCollapsed ? "" : dotClassName}
-            title={name}
-          />
-        )
-      }
-      const mapProp = (kind: Endpoint["kind"], size: number) => (prop: Port, i: number) => {
-        const key = EndpointImpl.computeId(node.id, i, kind)
-        return dot({ nodeId: node.id, port: i, kind: kind, name: prop.name }, key, i, size, prop.name)
-      }
-      const inputsClassNames = classNames(classNameOrDefault("connections"), classNameOrDefault(dirMapping["input"]))
-      const outputsClassNames = classNames(classNameOrDefault("connections"), classNameOrDefault(dirMapping["output"]))
-      const inputs = (
-        <div key={node.id + "inputs"} className={inputsClassNames}>
-          {node.inputs.map(mapProp(ConnectionType.input, node.inputs.length))}
-        </div>
-      )
-      const outputs = (
-        <div key={node.id + "outputs"} className={outputsClassNames}>
-          {node.outputs.map(mapProp(ConnectionType.output, node.outputs.length))}
-        </div>
-      )
-
-      return [inputs, outputs]
-    }
-
-    const newNodes = adjust(state.nodesState, state.componentSize, props.nodes)
-
-    newNodes.forEach((value, key) => state.nodesState.set(key, value))
-
-    const nodes = props.nodes.map((node) => {
-      const nodeState = state.nodesState.get(node.id)
-      const isCollapsed = node.isCollapsed !== undefined ? node.isCollapsed : nodeState.isCollapsed
-      const isSelected = this.state.selection && this.state.selection.id === node.id
-      const nodeClassNames = classNames(
-        classNameOrDefault("node"),
-        {
-          [classNameOrDefault("collapsed")]: isCollapsed,
-          [classNameOrDefault("selected")]: isSelected
-        },
-        node.classNames || []
-      )
-      const headerClassNames = node.childrenCollapsed ? "" : classNameOrDefault("header")
-      const expanderClassNames = classNameOrDefault("expander")
-      const iconClassNames = classNames(classNameOrDefault("icon"), {
-        [classNameOrDefault("arrow-down")]: isCollapsed,
-        [classNameOrDefault("arrow-right")]: !isCollapsed
-      })
-      const bodyClassNames = classNameOrDefault("body")
-
-      return (
-        <div
-          onClick={this.select.bind(this, "node", node.id)}
-          key={node.id}
-          style={nodeStyle(nodeState.pos)}
-          onMouseDown={dropArea === "body" ? this.onDragStarted.bind(this, node.id) : undefined}
-          onDoubleClick={dropArea === "body" ? this.toggleExpandNode.bind(this, node.id) : undefined}
-          className={nodeClassNames}
-        >
-          <>
-            <div
-              onMouseDown={dropArea === "header" ? this.onDragStarted.bind(this, node.id) : undefined}
-              onDoubleClick={dropArea === "header" ? this.toggleExpandNode.bind(this, node.id) : undefined}
-              className={headerClassNames}
-            >
-              {!node.children && (
-                <>
-                  <div
-                    className={expanderClassNames}
-                    onClick={this.toggleExpandNode.bind(this, node.id)}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    <div className={iconClassNames} />
-                  </div>
-                  <span>{node.name}</span>
-                </>
-              )}
-              {isCollapsed ? (
-                <div>
-                  {node.childrenCollapsed}
-                  {collapsedProperties(node)}
-                </div>
-              ) : (
-                ""
-              )}
-            </div>
-            {isCollapsed ? (
-              ""
-            ) : (
-              <div className={bodyClassNames}>
-                {node.children ? node.children : props.config.resolver(node)}
-                {properties(node)}
-              </div>
-            )}
-          </>
-        </div>
-      )
-    })
-
-    // Find all connections
-    const connections: { out: Endpoint; in: Endpoint }[] = []
-    const nodeDict = new Map<String, Node>()
-    for (let node of props.nodes) {
-      nodeDict.set(node.id, node)
-    }
-
-    for (let node of props.nodes) {
-      let i = 0
-      for (let input of node.inputs) {
-        if (input.connection === undefined) continue
-        if (Array.isArray(input.connection)) {
-          for (let connection of input.connection) {
-            const opponentNode = nodeDict.get(connection.nodeId)
-            // Is the opponent node available?
-            if (opponentNode === undefined) continue
-
-            const oppConnectionRaw = opponentNode.outputs[connection.port].connection
-            const oppConnection = filterIfArray(oppConnectionRaw, (c) => c.nodeId === node.id)
-
-            const inputConn: Endpoint = {
-              nodeId: node.id,
-              port: i,
-              kind: ConnectionType.input,
-              additionalClassName: connection.classNames,
-              notes: connection.notes
-            }
-            const outputConn: Endpoint = {
-              nodeId: connection.nodeId,
-              port: connection.port,
-              kind: ConnectionType.output,
-              additionalClassName: oppConnection.classNames,
-              notes: oppConnection.notes
-            }
-            connections.push({ in: inputConn, out: outputConn })
-          }
-        } else {
-          const connection = input.connection as Connection
-          const opponentNode = nodeDict.get(connection.nodeId)
-          // Is the opponent node available?
-          if (opponentNode === undefined) continue
-          const oppConnectionRaw = opponentNode.outputs[connection.port].connection
-          const oppConnection = filterIfArray(oppConnectionRaw, (c) => c.nodeId === node.id)
-
-          if (props.nodes.findIndex((n) => n.id === connection.nodeId) < 0) continue
-          const inputConn: Endpoint = {
-            nodeId: node.id,
-            port: i,
-            kind: ConnectionType.input,
-            additionalClassName: connection.classNames,
-            notes: connection.notes
-          }
-          const outputConn: Endpoint = {
-            nodeId: input.connection.nodeId,
-            port: input.connection.port,
-            kind: ConnectionType.output,
-            additionalClassName: oppConnection.classNames,
-            notes: oppConnection.notes
-          }
-          connections.push({ in: inputConn, out: outputConn })
-        }
-        ++i
-      }
-    }
-
-    const connectionsLines = connections.map((conn) => this.connection(conn.out, conn.in))
-    const workingItem =
-      state.workingItem && state.workingItem.type === "connection" ? workingConnection(state.workingItem) : ""
-
-    const { transformation } = state
-
-    const grid = () => {
-      if (props.config.grid === false) return ""
-
-      let dy = 18
-      let dx = 18
-
-      if (props.config.grid !== null && typeof props.config.grid === "object") {
-        dx = props.config.grid.size || 18
-        dy = props.config.grid.size || 18
-      }
-      const { width, height } = state.componentSize
-
-      const draw = (element: HTMLCanvasElement) => {
-        if (element === null) return
-        if (this.gridSize !== undefined && this.gridSize.height === height && this.gridSize.width === width) return
-        this.gridSize = { height, width }
-        const ctx = element.getContext("2d")
-        ctx.clearRect(0, 0, element.width, element.height)
-        ctx.beginPath()
-        ctx.strokeStyle = "#f2f2f2"
-        for (let iy = 0; iy < height / dy; ++iy) {
-          const y = dy * (iy + 0.5)
-          ctx.moveTo(0, y)
-          ctx.lineTo(width, y)
-        }
-
-        for (let ix = 0; ix < width / dx; ++ix) {
-          const x = dx * (ix + 0.5)
-          ctx.moveTo(x, 0)
-          ctx.lineTo(x, height)
-        }
-        ctx.stroke()
-      }
-      const gridClassName = classNameOrDefault("grid")
-      return <canvas className={gridClassName} width={width} height={height} ref={draw.bind(this)} />
-    }
-
-    const nodesContainerStyle = {
-      transform: `matrix(${transformation.zoom},0,0,${transformation.zoom},${transformation.dx},${transformation.dy})`
-    }
-
-    const editorClassName = classNames(classNameOrDefault("react-flow-editor"), props.additionalClassName || [])
-
-    return (
-      <div
-        style={props.style}
-        ref={this.onEditorUpdate.bind(this)}
-        tabIndex={0}
-        onKeyDown={this.onKeyDown.bind(this)}
-        onWheel={this.onWheel.bind(this)}
-        onMouseLeave={this.onDragEnded.bind(this)}
-        onMouseMove={this.onDrag.bind(this)}
-        onMouseDown={this.onMouseGlobalDown.bind(this)}
-        onMouseUp={this.onDragEnded.bind(this)}
-        className={editorClassName}
-      >
-        {grid()}
-        <svg
-          ref={this.updateEditorSize.bind(this)}
-          className={classNameOrDefault("connections")}
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {connectionsLines}
-          {workingItem}
-        </svg>
-        <div style={nodesContainerStyle}>{nodes}</div>
-      </div>
-    )
-  }
-
   createNewNode(name: string, factory: () => Node, pos: Vector2d) {
     const isInRange = (min: number, size: number, value: number) => min <= value && min + size >= value
 
@@ -1056,11 +611,355 @@ export class Editor extends React.Component<Editor.Props, State> {
     document.body.addEventListener("mousemove", onMove)
   }
 
-  getPositions(): Map<string, Vector2d> {
-    const map = new Map<string, Vector2d>()
-    for (const [key, entry] of this.state.nodesState.entries()) {
-      map.set(key, entry.pos)
+  render() {
+    const workingConnection = (info: WorkItemConnection) => {
+      return this.connectionPath(info.output, info.input)
     }
-    return map
+
+    const classNameOrDefault = (label: string) => {
+      if (props.config.style && props.config.style[label]) return props.config.style[label]
+      return label
+    }
+
+    const { props, state } = this
+
+    const nodeStyle = (pos: Vector2d) => ({
+      top: `${pos.y}px`,
+      left: `${pos.x}px`
+    })
+
+    const dir = this.props.config.direction || "we"
+    const dropArea = this.props.config.dragHandler || "header"
+    const dirMapping = dir === "we" ? { input: "right", output: "left" } : { input: "left", output: "right" }
+
+    const properties = (node: Node) => {
+      if (node.properties !== undefined && node.properties.display === "only-dots") {
+        const dot = (kind: IEndpoint["kind"], total: number) => (prop: Port, index: number) => {
+          const conn: IEndpoint = { nodeId: node.id, port: index, kind: kind, name: prop.name }
+          const site = dirMapping[kind]
+          const style = site === "right" ? { right: "7px" } : {}
+          const dotClassName = classNames(classNameOrDefault("dot"), classNameOrDefault(kind), classNameOrDefault(site))
+          return (
+            <div key={Endpoint.computeId(node.id, index, kind)}>
+              <div
+                onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
+                onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
+                ref={this.setConnectionEndpoint.bind(this, conn)}
+                className={dotClassName}
+                style={{
+                  ...style,
+                  position: "absolute",
+                  top: `calc(${(100 * (index + 1)) / (total + 1)}% - 8px)`
+                }}
+                title={prop.name}
+              />
+            </div>
+          )
+        }
+        return [
+          ...node.inputs.map(dot(ConnectionType.input, node.inputs.length)),
+          ...node.outputs.map(dot(ConnectionType.output, node.outputs.length))
+        ]
+      } else {
+        const dotClassName = (conn) =>
+          classNames(
+            classNameOrDefault("dot"),
+            classNameOrDefault(conn.kind),
+            classNameOrDefault(dirMapping[conn.kind])
+          )
+        // todo change algorithm, we should choose dot positions
+        const dot = (conn: IEndpoint, name: string) => (
+          <div
+            onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
+            onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
+            ref={this.setConnectionEndpoint.bind(this, conn)}
+            className={dotClassName(conn)}
+            title={name}
+          />
+        )
+
+        const mapProp = (kind: IEndpoint["kind"]) => (prop: Port, index: number) => {
+          const key = Endpoint.computeId(node.id, index, kind)
+          return (
+            <div key={key}>
+              {node.children ? null : prop.renderer ? prop.renderer(prop) : prop.name}
+              {dot({ nodeId: node.id, port: index, kind: kind, name: prop.name }, prop.name)}
+            </div>
+          )
+        }
+        return [...node.inputs.map(mapProp(ConnectionType.input)), ...node.outputs.map(mapProp(ConnectionType.output))]
+      }
+    }
+
+    const collapsedProperties = (node: Node) => {
+      const dot = (conn: IEndpoint, key: string, index: number, size: number, name: string) => {
+        const style = () => {
+          const radius = 20
+          const angle = size === 1 ? 0 : ((index - size / 2 + 0.5) * Math.PI) / 4
+          if (dirMapping[conn.kind] === "right") {
+            const center = { x: -20, y: 1 }
+            return {
+              top: `${center.y + radius * Math.sin(angle)}px`,
+              left: `${center.x + radius * Math.cos(angle)}px`
+            }
+          } else if (dirMapping[conn.kind] === "left") {
+            const center = { x: 0, y: 1 }
+            return {
+              top: `${center.y + radius * Math.sin(angle)}px`,
+              left: `${center.x - radius * Math.cos(angle)}px`
+            }
+          } else {
+            console.warn(`Unknown dir ${conn.kind}`)
+          }
+        }
+        const dotClassName = classNames(
+          classNameOrDefault("dot"),
+          classNameOrDefault(conn.kind),
+          classNameOrDefault(dirMapping[conn.kind])
+        )
+        return (
+          <div
+            style={style()}
+            key={key}
+            onMouseDown={this.onCreateConnectionStarted.bind(this, conn)}
+            onMouseUp={this.onCreateConnectionEnded.bind(this, conn)}
+            ref={this.setConnectionEndpoint.bind(this, conn)}
+            className={node.childrenCollapsed ? "" : dotClassName}
+            title={name}
+          />
+        )
+      }
+      const mapProp = (kind: IEndpoint["kind"], size: number) => (prop: Port, i: number) => {
+        const key = Endpoint.computeId(node.id, i, kind)
+        return dot({ nodeId: node.id, port: i, kind: kind, name: prop.name }, key, i, size, prop.name)
+      }
+      const inputsClassNames = classNames(classNameOrDefault("connections"), classNameOrDefault(dirMapping["input"]))
+      const outputsClassNames = classNames(classNameOrDefault("connections"), classNameOrDefault(dirMapping["output"]))
+      const inputs = (
+        <div key={node.id + "inputs"} className={inputsClassNames}>
+          {node.inputs.map(mapProp(ConnectionType.input, node.inputs.length))}
+        </div>
+      )
+      const outputs = (
+        <div key={node.id + "outputs"} className={outputsClassNames}>
+          {node.outputs.map(mapProp(ConnectionType.output, node.outputs.length))}
+        </div>
+      )
+
+      return [inputs, outputs]
+    }
+
+    const newNodes = adjust(state.nodesState, state.componentSize, props.nodes)
+
+    newNodes.forEach((value, key) => state.nodesState.set(key, value))
+
+    const nodes = props.nodes.map((node) => {
+      const nodeState = state.nodesState.get(node.id)
+      const isCollapsed = node.isCollapsed !== undefined ? node.isCollapsed : nodeState.isCollapsed
+      const isSelected = this.state.selection && this.state.selection.id === node.id
+      const nodeClassNames = classNames(
+        classNameOrDefault("node"),
+        {
+          [classNameOrDefault("collapsed")]: isCollapsed,
+          [classNameOrDefault("selected")]: isSelected
+        },
+        node.classNames || []
+      )
+      const headerClassNames = node.childrenCollapsed ? "" : classNameOrDefault("header")
+      const expanderClassNames = classNameOrDefault("expander")
+      const iconClassNames = classNames(classNameOrDefault("icon"), {
+        [classNameOrDefault("arrow-down")]: isCollapsed,
+        [classNameOrDefault("arrow-right")]: !isCollapsed
+      })
+      const bodyClassNames = classNameOrDefault("body")
+
+      return (
+        <div
+          onClick={this.select.bind(this, "node", node.id)}
+          key={node.id}
+          style={nodeStyle(nodeState.pos)}
+          onMouseDown={dropArea === "body" ? this.onDragStarted.bind(this, node.id) : undefined}
+          onDoubleClick={dropArea === "body" ? this.toggleExpandNode.bind(this, node.id) : undefined}
+          className={nodeClassNames}
+        >
+          <>
+            <div
+              onMouseDown={dropArea === "header" ? this.onDragStarted.bind(this, node.id) : undefined}
+              onDoubleClick={dropArea === "header" ? this.toggleExpandNode.bind(this, node.id) : undefined}
+              className={headerClassNames}
+            >
+              {!node.children && (
+                <>
+                  <div
+                    className={expanderClassNames}
+                    onClick={this.toggleExpandNode.bind(this, node.id)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <div className={iconClassNames} />
+                  </div>
+                  <span>{node.name}</span>
+                </>
+              )}
+              {isCollapsed ? (
+                <div>
+                  {node.childrenCollapsed}
+                  {collapsedProperties(node)}
+                </div>
+              ) : (
+                ""
+              )}
+            </div>
+            {isCollapsed ? (
+              ""
+            ) : (
+              <div className={bodyClassNames}>
+                {node.children ? node.children : props.config.resolver(node)}
+                {properties(node)}
+              </div>
+            )}
+          </>
+        </div>
+      )
+    })
+
+    // Find all connections
+    const connections: { out: IEndpoint; in: IEndpoint }[] = []
+    const nodeDict = new Map<String, Node>()
+    for (let node of props.nodes) {
+      nodeDict.set(node.id, node)
+    }
+
+    for (let node of props.nodes) {
+      let i = 0
+      for (let input of node.inputs) {
+        if (input.connection === undefined) continue
+        if (Array.isArray(input.connection)) {
+          for (let connection of input.connection) {
+            const opponentNode = nodeDict.get(connection.nodeId)
+            // Is the opponent node available?
+            if (opponentNode === undefined) continue
+
+            const oppConnectionRaw = opponentNode.outputs[connection.port].connection
+            const oppConnection = filterIfArray(oppConnectionRaw, (c) => c.nodeId === node.id)
+
+            const inputConn: IEndpoint = {
+              nodeId: node.id,
+              port: i,
+              kind: ConnectionType.input,
+              additionalClassName: connection.classNames,
+              notes: connection.notes
+            }
+            const outputConn: IEndpoint = {
+              nodeId: connection.nodeId,
+              port: connection.port,
+              kind: ConnectionType.output,
+              additionalClassName: oppConnection.classNames,
+              notes: oppConnection.notes
+            }
+            connections.push({ in: inputConn, out: outputConn })
+          }
+        } else {
+          const connection = input.connection as Connection
+          const opponentNode = nodeDict.get(connection.nodeId)
+          // Is the opponent node available?
+          if (opponentNode === undefined) continue
+          const oppConnectionRaw = opponentNode.outputs[connection.port].connection
+          const oppConnection = filterIfArray(oppConnectionRaw, (c) => c.nodeId === node.id)
+
+          if (props.nodes.findIndex((n) => n.id === connection.nodeId) < 0) continue
+          const inputConn: IEndpoint = {
+            nodeId: node.id,
+            port: i,
+            kind: ConnectionType.input,
+            additionalClassName: connection.classNames,
+            notes: connection.notes
+          }
+          const outputConn: IEndpoint = {
+            nodeId: input.connection.nodeId,
+            port: input.connection.port,
+            kind: ConnectionType.output,
+            additionalClassName: oppConnection.classNames,
+            notes: oppConnection.notes
+          }
+          connections.push({ in: inputConn, out: outputConn })
+        }
+        ++i
+      }
+    }
+
+    const connectionsLines = connections.map((conn) => this.connection(conn.out, conn.in))
+    const workingItem =
+      state.workingItem && state.workingItem.type === "connection" ? workingConnection(state.workingItem) : ""
+
+    const { transformation } = state
+
+    const grid = () => {
+      if (props.config.grid === false) return ""
+
+      let dy = 18
+      let dx = 18
+
+      if (props.config.grid !== null && typeof props.config.grid === "object") {
+        dx = props.config.grid.size || 18
+        dy = props.config.grid.size || 18
+      }
+      const { width, height } = state.componentSize
+
+      const draw = (element: HTMLCanvasElement) => {
+        if (element === null) return
+        if (this.gridSize !== undefined && this.gridSize.height === height && this.gridSize.width === width) return
+        this.gridSize = { height, width }
+        const ctx = element.getContext("2d")
+        ctx.clearRect(0, 0, element.width, element.height)
+        ctx.beginPath()
+        ctx.strokeStyle = "#f2f2f2"
+        for (let iy = 0; iy < height / dy; ++iy) {
+          const y = dy * (iy + 0.5)
+          ctx.moveTo(0, y)
+          ctx.lineTo(width, y)
+        }
+
+        for (let ix = 0; ix < width / dx; ++ix) {
+          const x = dx * (ix + 0.5)
+          ctx.moveTo(x, 0)
+          ctx.lineTo(x, height)
+        }
+        ctx.stroke()
+      }
+      const gridClassName = classNameOrDefault("grid")
+      return <canvas className={gridClassName} width={width} height={height} ref={draw.bind(this)} />
+    }
+
+    const nodesContainerStyle = {
+      transform: `matrix(${transformation.zoom},0,0,${transformation.zoom},${transformation.dx},${transformation.dy})`
+    }
+
+    const editorClassName = classNames(classNameOrDefault("react-flow-editor"), props.additionalClassName || [])
+
+    return (
+      <div
+        style={props.style}
+        ref={this.onEditorUpdate.bind(this)}
+        tabIndex={0}
+        onKeyDown={this.onKeyDown.bind(this)}
+        onWheel={this.onWheel.bind(this)}
+        onMouseLeave={this.onDragEnded.bind(this)}
+        onMouseMove={this.onDrag.bind(this)}
+        onMouseDown={this.onMouseGlobalDown.bind(this)}
+        onMouseUp={this.onDragEnded.bind(this)}
+        className={editorClassName}
+      >
+        {grid()}
+        <svg
+          ref={this.updateEditorSize.bind(this)}
+          className={classNameOrDefault("connections")}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {connectionsLines}
+          {workingItem}
+        </svg>
+        <div style={nodesContainerStyle}>{nodes}</div>
+      </div>
+    )
   }
 }
