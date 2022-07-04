@@ -1,17 +1,17 @@
-import { Endpoint } from "./editor"
+import { IEndpoint } from "./Endpoint"
 import { Node } from "./types"
 
 export interface NodeRemoved {
   id: string
   type: "NodeRemoved"
-  correspondingConnections: { input: Endpoint; output: Endpoint }[]
+  correspondingConnections: { input: IEndpoint; output: IEndpoint }[]
 }
 
 export interface ConnectionRemoved {
   id: string
   type: "ConnectionRemoved"
-  input: Endpoint
-  output: Endpoint
+  input: IEndpoint
+  output: IEndpoint
 }
 
 export interface CreatedConnectionInfo {
