@@ -1,5 +1,6 @@
 import React from "react"
 import _ from "lodash"
+import * as ReactDOM from "react-dom"
 
 import { Vector2d, Rect } from "../geometry"
 import { BUTTON_LEFT, KEY_CODE_DELETE, BUTTON_MIDDLE } from "./constants"
@@ -339,7 +340,7 @@ export class Editor extends React.Component<Editor.Props, State> {
   private onMouseGlobalDown(e: React.MouseEvent<HTMLElement>) {
     if (e.button === BUTTON_MIDDLE) {
       this.currentAction = { type: "translate", lastPos: { x: e.clientX, y: e.clientY } }
-    } else if (e.button === BUTTON_LEFT) {
+    } else if (e.button === BUTTON_LEFT && !(e.target as HTMLElement).closest(".selected")) {
       this.select(null, null)
     }
   }
@@ -563,6 +564,7 @@ export class Editor extends React.Component<Editor.Props, State> {
   }
 
   onStartCreatingNewNode(
+    children: JSX.Element,
     name: string,
     factory: () => Node,
     pos: Vector2d,
@@ -578,13 +580,7 @@ export class Editor extends React.Component<Editor.Props, State> {
     node.style.top = `${pos.y}px`
     node.style.left = `${pos.x}px`
     node.style.position = "absolute"
-
-    const title = document.createElement("span")
-    title.innerHTML = name
-    const header = document.createElement("div")
-    header.className = classNameOrDefault("header")
-    header.appendChild(title)
-    node.appendChild(header)
+    ReactDOM.render(children, node)
 
     const host = document.createElement("div")
     host.className = classNameOrDefault("react-flow-creating-node")
@@ -609,6 +605,14 @@ export class Editor extends React.Component<Editor.Props, State> {
     document.body.addEventListener("mouseup", onFinishCreatingNewNode)
     document.body.addEventListener("mouseleave", onFinishCreatingNewNode)
     document.body.addEventListener("mousemove", onMove)
+  }
+
+  getPositions(): Map<string, Vector2d> {
+    const map = new Map<string, Vector2d>()
+    for (const [key, entry] of this.state.nodesState.entries()) {
+      map.set(key, entry.pos)
+    }
+    return map
   }
 
   render() {

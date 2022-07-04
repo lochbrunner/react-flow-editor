@@ -30,6 +30,7 @@ export class MenuItem extends React.Component<MenuItem.Props, State> {
       const offset = Vector2d.subtract({ x: e.clientX, y: e.clientY }, pos)
       if ((window as any).onStartCreatingNewNode)
         (window as any).onStartCreatingNewNode(
+          this.props.children,
           props.nodeName ? props.nodeName : props.name,
           props.factory,
           pos,
@@ -58,7 +59,7 @@ export class MenuItem extends React.Component<MenuItem.Props, State> {
         className={`react-flow-editor-menu-item ${this.props.classNames ? this.props.classNames.join(" ") : ""}`}
         onMouseDown={this.onStartCreatingNewNode.bind(this)}
       >
-        <span>{this.props.name}</span>
+        {this.props.children || <span>{this.props.name}</span>}
       </div>
     )
   }
