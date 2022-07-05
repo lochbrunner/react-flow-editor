@@ -21,7 +21,7 @@
     "prettier": "./node_modules/.bin/prettier . --write",
     "refresh-all": "npm run refresh-redux && npm run refresh-simple",
     "refresh-redux": " rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist",
-    "refresh-simple": " rm -rf ./example/simple/node_modules/react-flow-editor/dist && cp -r ./dist ./example/simple/node_modules/react-flow-editor"
+    "refresh-simple": " rm -rf ./example/simple/node_modules && cd ./example/simple && yarn"
   },
   "dependencies": {
     "classnames": "^2.2.6",

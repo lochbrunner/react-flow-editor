@@ -58,10 +58,6 @@ export const Connections: React.FC<ConnectionProps> = (props) => {
     key?: string,
     onClick?: (e: React.MouseEvent<SVGPathElement>) => void
   ) => {
-    const classNameOrDefault = (label: string) => {
-      if (props.config.style && props.config.style[label]) return props.config.style[label]
-      return label
-    }
     const a0 = output
     const a3 = input
     const anchorLength = props.config.connectionAnchorsLength || 100
@@ -105,52 +101,26 @@ export const Connections: React.FC<ConnectionProps> = (props) => {
       )
   }
 
-  const connectionsLines = () => {
-    // Find all connections
-    const connections: { out: IEndpoint; in: IEndpoint }[] = []
-    const nodeDict = new Map<String, NodeType>()
-    for (let node of props.nodes) {
-      nodeDict.set(node.id, node)
-    }
+  // Find all connections
+  const connections: { out: IEndpoint; in: IEndpoint }[] = []
+  const nodeDict = new Map<String, NodeType>()
+  for (let node of props.nodes) {
+    nodeDict.set(node.id, node)
+  }
 
-    for (let node of props.nodes) {
-      let i = 0
-      for (let input of node.inputs) {
-        if (input.connection === undefined) continue
-        if (Array.isArray(input.connection)) {
-          for (let connection of input.connection) {
-            const opponentNode = nodeDict.get(connection.nodeId)
-            // Is the opponent node available?
-            if (opponentNode === undefined) continue
-
-            const oppConnectionRaw = opponentNode.outputs[connection.port].connection
-            const oppConnection = filterIfArray(oppConnectionRaw, (c) => c.nodeId === node.id)
-
-            const inputConn: IEndpoint = {
-              nodeId: node.id,
-              port: i,
-              kind: ConnectionType.input,
-              additionalClassName: connection.classNames,
-              notes: connection.notes
-            }
-            const outputConn: IEndpoint = {
-              nodeId: connection.nodeId,
-              port: connection.port,
-              kind: ConnectionType.output,
-              additionalClassName: oppConnection.classNames,
-              notes: oppConnection.notes
-            }
-            connections.push({ in: inputConn, out: outputConn })
-          }
-        } else {
-          const connection = input.connection as Connection
+  for (let node of props.nodes) {
+    let i = 0
+    for (let input of node.inputs) {
+      if (input.connection === undefined) continue
+      if (Array.isArray(input.connection)) {
+        for (let connection of input.connection) {
           const opponentNode = nodeDict.get(connection.nodeId)
           // Is the opponent node available?
           if (opponentNode === undefined) continue
+
           const oppConnectionRaw = opponentNode.outputs[connection.port].connection
           const oppConnection = filterIfArray(oppConnectionRaw, (c) => c.nodeId === node.id)
 
-          if (props.nodes.findIndex((n) => n.id === connection.nodeId) < 0) continue
           const inputConn: IEndpoint = {
             nodeId: node.id,
             port: i,
@@ -159,20 +129,44 @@ export const Connections: React.FC<ConnectionProps> = (props) => {
             notes: connection.notes
           }
           const outputConn: IEndpoint = {
-            nodeId: input.connection.nodeId,
-            port: input.connection.port,
+            nodeId: connection.nodeId,
+            port: connection.port,
             kind: ConnectionType.output,
             additionalClassName: oppConnection.classNames,
             notes: oppConnection.notes
           }
           connections.push({ in: inputConn, out: outputConn })
         }
-        ++i
-      }
-    }
+      } else {
+        const connection = input.connection as Connection
+        const opponentNode = nodeDict.get(connection.nodeId)
+        // Is the opponent node available?
+        if (opponentNode === undefined) continue
+        const oppConnectionRaw = opponentNode.outputs[connection.port].connection
+        const oppConnection = filterIfArray(oppConnectionRaw, (c) => c.nodeId === node.id)
 
-    return connections.map((conn) => connection(conn.out, conn.in))
+        if (props.nodes.findIndex((n) => n.id === connection.nodeId) < 0) continue
+        const inputConn: IEndpoint = {
+          nodeId: node.id,
+          port: i,
+          kind: ConnectionType.input,
+          additionalClassName: connection.classNames,
+          notes: connection.notes
+        }
+        const outputConn: IEndpoint = {
+          nodeId: input.connection.nodeId,
+          port: input.connection.port,
+          kind: ConnectionType.output,
+          additionalClassName: oppConnection.classNames,
+          notes: oppConnection.notes
+        }
+        connections.push({ in: inputConn, out: outputConn })
+      }
+      ++i
+    }
   }
+
+  const connectionsLines = connections.map((conn) => connection(conn.out, conn.in))
 
   const updateEditorSize = (element: Element) => {
     if (element === null) return
@@ -196,7 +190,7 @@ export const Connections: React.FC<ConnectionProps> = (props) => {
 
   return (
     <svg ref={updateEditorSize} className="connections" xmlns="http://www.w3.org/2000/svg">
-      {connectionsLines()}
+      {connectionsLines}
       {workingItem}
     </svg>
   )

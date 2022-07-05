@@ -24,8 +24,9 @@ type EditorProps = {
 
 export const Editor: React.FC<EditorProps> = (props) => {
   const [state, setState] = useState<EditorState>(initialState(props.nodes))
-  let editorBoundingRect: DOMRect = undefined
-  let currentAction: CurrentAction = undefined
+  const [currentAction, setCurrentAction] = useState<CurrentAction>(undefined)
+  const [editorBoundingRect, setEditorBoundingRect] = useState<DOMRect>(undefined)
+  const [nodes, setNodes] = useState<NodeType[]>(props.nodes)
   const endpointCache = new Map<string, Vector2d>()
 
   const select = (type: ItemType | null, id: string | null) => {
@@ -36,7 +37,7 @@ export const Editor: React.FC<EditorProps> = (props) => {
         })
       const { config } = props
       if (config.onChanged && type === "node") {
-        const node = props.nodes.find((n) => n.id === id)
+        const node = nodes.find((n) => n.id === id)
         config.onChanged({ type: "NodeSelected", node: node }, updateState)
       } else if (config.onChanged && type === null) config.onChanged({ type: "NodeDeselected" }, updateState)
       if (config.onChanged === undefined || config.demoMode) updateState()
@@ -48,8 +49,7 @@ export const Editor: React.FC<EditorProps> = (props) => {
     const rect = element.getBoundingClientRect() as DOMRect
 
     if (editorBoundingRect === undefined || editorBoundingRect.x !== rect.x || editorBoundingRect.y !== rect.y) {
-      editorBoundingRect = rect
-
+      setEditorBoundingRect(rect)
       setState((state) => state)
     }
   }
@@ -63,22 +63,22 @@ export const Editor: React.FC<EditorProps> = (props) => {
         if (selection.type === "connection") {
           const { input, output } = extractConnectionFromId(selection.id)
           const updateProps = () => {
-            removeConnection(input, output, props.nodes)
+            removeConnection(input, output, nodes)
           }
           if (props.config.onChanged !== undefined)
             props.config.onChanged({ input, output, type: "ConnectionRemoved", id: selection.id }, updateProps)
           if (props.config.onChanged === undefined || props.config.demoMode) updateProps()
         } else if (selection.type === "node") {
-          const index = props.nodes.findIndex((node) => node.id === selection.id)
+          const index = nodes.findIndex((node) => node.id === selection.id)
           // Delete all corresponding connections
           // TODO: Refactor the next two for loops in order to write the code only once
           const correspondingConnections: { input: IEndpoint; output: IEndpoint }[] = []
-          const nodeToDelete = props.nodes[index]
+          const nodeToDelete = nodes[index]
           let inputIndex = -1
           for (let input of nodeToDelete.inputs) {
             ++inputIndex
             if (isEmptyArrayOrUndefined(input.connection)) continue
-            const peerNodes = props.nodes.filter(nodeIdPredicate(input.connection)) //  find(nodePredicate(input.id));
+            const peerNodes = nodes.filter(nodeIdPredicate(input.connection)) //  find(nodePredicate(input.id));
             for (let peerNode of peerNodes) {
               const peerOutputsIds = peerNode.outputs
                 .map((v, i) => ({ v, i }))
@@ -97,7 +97,7 @@ export const Editor: React.FC<EditorProps> = (props) => {
           for (let output of nodeToDelete.outputs) {
             ++outputIndex
             if (isEmptyArrayOrUndefined(output.connection)) continue
-            const peerNodes = props.nodes.filter(nodeIdPredicate(output.connection))
+            const peerNodes = nodes.filter(nodeIdPredicate(output.connection))
             for (let peerNode of peerNodes) {
               const peerInputsIds = peerNode.inputs
                 .map((v, i) => ({ v, i }))
@@ -118,10 +118,10 @@ export const Editor: React.FC<EditorProps> = (props) => {
 
           const updateProps = () => {
             for (const connectionToDelete of correspondingConnections) {
-              removeConnection(connectionToDelete.input, connectionToDelete.output, props.nodes)
+              removeConnection(connectionToDelete.input, connectionToDelete.output, nodes)
             }
 
-            props.nodes.splice(index, 1)
+            nodes.splice(index, 1)
           }
           if (props.config.onChanged !== undefined)
             props.config.onChanged({ type: "NodeRemoved", id: selection.id, correspondingConnections }, updateProps)
@@ -151,7 +151,7 @@ export const Editor: React.FC<EditorProps> = (props) => {
   }
 
   const onDragEnded = (e: React.MouseEvent<HTMLElement>) => {
-    currentAction = undefined
+    setCurrentAction(undefined)
     setState((state) => ({ ...state, workingItem: undefined }))
   }
 
@@ -189,23 +189,24 @@ export const Editor: React.FC<EditorProps> = (props) => {
         setState((state) => ({ ...state, transformation }))
       }
     })
-    currentAction.lastPos = newPos
+
+    setCurrentAction({ ...currentAction, lastPos: newPos })
   }
 
   const onMouseGlobalDown = (e: React.MouseEvent<HTMLElement>) => {
     if (e.button === BUTTON_MIDDLE) {
-      currentAction = { type: "translate", lastPos: { x: e.clientX, y: e.clientY } }
+      setCurrentAction({ type: "translate", lastPos: { x: e.clientX, y: e.clientY } })
     } else if (e.button === BUTTON_LEFT && !(e.target as HTMLElement).closest(".selected")) {
       select(null, null)
     }
   }
 
   const onDragStarted = (id: string, e: React.MouseEvent<HTMLElement>) => {
-    if (e.button === BUTTON_LEFT) currentAction = { lastPos: { x: e.clientX, y: e.clientY }, id: id, type: "node" }
+    if (e.button === BUTTON_LEFT) setCurrentAction({ lastPos: { x: e.clientX, y: e.clientY }, id: id, type: "node" })
   }
 
   const toggleExpandNode = (id: string) => {
-    const node = props.nodes.find((n) => n.id === id)
+    const node = nodes.find((n) => n.id === id)
     const desiredState = node.isCollapsed !== undefined ? !node.isCollapsed : !state.nodesState.get(id).isCollapsed
     const updateState = () =>
       setState((state) => {
@@ -220,7 +221,7 @@ export const Editor: React.FC<EditorProps> = (props) => {
 
   const onCreateConnectionStarted = (endpoint: IEndpoint, e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation()
-    currentAction = { lastPos: { x: e.screenX, y: e.screenY }, endpoint, type: "connection" }
+    setCurrentAction({ lastPos: { x: e.screenX, y: e.screenY }, endpoint, type: "connection" })
   }
 
   const createConnection = (input: IEndpoint, output: IEndpoint) => {
@@ -321,9 +322,9 @@ export const Editor: React.FC<EditorProps> = (props) => {
       className={classNames("react-flow-editor", props.additionalClassName || [])}
     >
       <Grid componentSize={state.componentSize} grid={props.config.grid} />
-      <Connections state={state} setState={setState} nodes={props.nodes} select={select} config={props.config} />
+      <Connections state={state} setState={setState} nodes={nodes} select={select} config={props.config} />
 
-      {props.nodes.map((node) => (
+      {nodes.map((node) => (
         <Node
           state={state}
           select={select}
