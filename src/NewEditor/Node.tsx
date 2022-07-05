@@ -186,10 +186,10 @@ export const Node: React.FC<NodeProps> = (props) => {
             </>
           )}
           {isCollapsed ? (
-            <div>
+            <>
               {props.node.childrenCollapsed}
               {collapsedProperties(props.node)}
-            </div>
+            </>
           ) : (
             ""
           )}

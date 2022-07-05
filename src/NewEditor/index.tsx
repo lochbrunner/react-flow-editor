@@ -14,6 +14,7 @@ import { Grid } from "./Grid"
 import { Connections } from "./Connections"
 
 import { Node } from "./Node"
+import { adjust } from "../adjust"
 
 type EditorProps = {
   config: Config
@@ -311,6 +312,10 @@ export const Editor: React.FC<EditorProps> = (props) => {
   const nodesContainerStyle = {
     transform: `matrix(${state.transformation.zoom},0,0,${state.transformation.zoom},${state.transformation.dx},${state.transformation.dy})`
   }
+
+  const newNodes = adjust(state.nodesState, state.componentSize, props.nodes)
+
+  newNodes.forEach((value, key) => state.nodesState.set(key, value))
 
   return (
     <div
