@@ -308,6 +308,10 @@ export const Editor: React.FC<EditorProps> = (props) => {
     }
   }
 
+  const nodesContainerStyle = {
+    transform: `matrix(${state.transformation.zoom},0,0,${state.transformation.zoom},${state.transformation.dx},${state.transformation.dy})`
+  }
+
   return (
     <div
       style={props.style}
@@ -324,21 +328,23 @@ export const Editor: React.FC<EditorProps> = (props) => {
       <Grid componentSize={state.componentSize} grid={props.config.grid} />
       <Connections state={state} setState={setState} nodes={nodes} select={select} config={props.config} />
 
-      {nodes.map((node) => (
-        <Node
-          state={state}
-          select={select}
-          node={node}
-          onDragStarted={onDragStarted}
-          toggleExpandNode={toggleExpandNode}
-          resolver={props.config.resolver}
-          dir={props.config.direction || "we"}
-          onCreateConnectionStarted={onCreateConnectionStarted}
-          onCreateConnectionEnded={onCreateConnectionEnded}
-          setConnectionEndpoint={setConnectionEndpoint}
-          dropArea={props.config.dragHandler || "header"}
-        />
-      ))}
+      <div style={nodesContainerStyle}>
+        {nodes.map((node) => (
+          <Node
+            state={state}
+            select={select}
+            node={node}
+            onDragStarted={onDragStarted}
+            toggleExpandNode={toggleExpandNode}
+            resolver={props.config.resolver}
+            dir={props.config.direction || "we"}
+            onCreateConnectionStarted={onCreateConnectionStarted}
+            onCreateConnectionEnded={onCreateConnectionEnded}
+            setConnectionEndpoint={setConnectionEndpoint}
+            dropArea={props.config.dragHandler || "header"}
+          />
+        ))}
+      </div>
     </div>
   )
 }

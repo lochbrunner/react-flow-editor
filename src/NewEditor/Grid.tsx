@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { Size } from "../types"
 
 type GridProps = {
@@ -7,7 +7,7 @@ type GridProps = {
 }
 
 export const Grid: React.FC<GridProps> = (props) => {
-  let gridSize: Size = undefined
+  const [gridSize, setGridSize] = useState<Size>(undefined)
 
   let dy = 18
   let dx = 18
@@ -24,7 +24,7 @@ export const Grid: React.FC<GridProps> = (props) => {
 
     if (gridSize !== undefined && gridSize.height === height && gridSize.width === width) return
 
-    gridSize = { height, width }
+    setGridSize({ height, width })
     const ctx = element.getContext("2d")
     ctx.clearRect(0, 0, element.width, element.height)
     ctx.beginPath()
