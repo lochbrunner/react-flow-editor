@@ -1,4 +1,4 @@
-export { Editor } from "./Editor"
+export { Editor } from "./NewEditor"
 export { Endpoint } from "./Endpoint"
 export { MenuItem } from "./menu"
 export {

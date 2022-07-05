@@ -8,7 +8,7 @@ import { Connection, Size, Port, Node, Config } from "../types"
 import classNames from "classnames"
 import { NodeState, adjust } from "../adjust"
 import { ConnectionType, Endpoint, IEndpoint } from "../Endpoint"
-import { ItemType, State, WorkItem, WorkItemConnection } from "./types"
+import { ItemType, EditorState, WorkItem, WorkItemConnection } from "./types"
 import {
   compareConnections,
   computeConnectionId,
@@ -28,7 +28,7 @@ export namespace Editor {
   }
 }
 
-export class Editor extends React.Component<Editor.Props, State> {
+export class Editor extends React.Component<Editor.Props, EditorState> {
   private currentAction?:
     | {
         lastPos: Vector2d

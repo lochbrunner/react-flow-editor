@@ -1,3 +1,4 @@
+import { NodeState } from "./adjust"
 import { ChangeAction } from "./change-api"
 import { Vector2d } from "./geometry"
 
