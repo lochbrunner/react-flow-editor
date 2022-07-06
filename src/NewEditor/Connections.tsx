@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import React from "react"
+import React, { useEffect } from "react"
 import { computeConnectionId, filterIfArray } from "./helpers"
 import { ConnectionType, Endpoint, IEndpoint } from "../Endpoint"
 import { Vector2d } from "../geometry"
@@ -15,6 +15,14 @@ type ConnectionProps = {
 }
 
 export const Connections: React.FC<ConnectionProps> = (props) => {
+  const [, _forceRerender] = React.useState({})
+
+  useEffect(() => {
+    setTimeout(() => {
+      _forceRerender({})
+    })
+  }, [props])
+
   const connection = (outputConn: IEndpoint, inputConn: IEndpoint) => {
     const { nodesState, connectionState } = props.state
     const inputKey = Endpoint.computeId(inputConn.nodeId, inputConn.port, inputConn.kind)
