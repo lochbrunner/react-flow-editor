@@ -159,7 +159,24 @@ const config: Config = {
 }
 
 const App = () => {
-  const { editorProps, createNewNode } = useEditor({ initialNodes: nodes, config })
+  const { editorProps, createNewNode, setTransformation } = useEditor({ initialNodes: nodes, config })
+
+  const onWheel = (e: React.WheelEvent<HTMLElement>) => {
+    if (e.ctrlKey) return
+    const pt = editorProps.state.transformation
+    const zoomFactor = Math.pow(1.25, Math.sign(e.deltaY))
+    const zoom = pt.zoom * zoomFactor
+
+    const cx = e.clientX
+    const cy = e.clientY
+    // See https://github.com/lochbrunner/meliodraw/blob/master/Melio.Draw/SharpDX/OrthogonalCamera.cs#L116
+    const dy = cy * (pt.zoom - zoom) + pt.dy
+    const dx = cx * (pt.zoom - zoom) + pt.dx
+
+    const transformation = { dx, dy, zoom }
+
+    setTransformation(transformation)
+  }
 
   return (
     <div>
@@ -198,7 +215,9 @@ const App = () => {
         </div>
       </div>
       <Log subscribe={(update) => (log = update)} />
-      <Editor {...editorProps} />
+      <div onWheel={onWheel}>
+        <Editor {...editorProps} />
+      </div>
       <div className="node-attributes">
         <NodeAttributes subscribe={(update) => (attributes = update)} />
       </div>

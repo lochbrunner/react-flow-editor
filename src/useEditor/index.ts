@@ -16,6 +16,7 @@ type UseEditorInput = {
 type UseEditorOutput = {
   editorProps: EditorProps
   createNewNode: (newNode: NodeType, pos: Vector2d) => void
+  setTransformation: (transformation: { dx: number; dy: number; zoom: number }) => void
 }
 
 export const useEditor = (props: UseEditorInput): UseEditorOutput => {
@@ -67,8 +68,12 @@ export const useEditor = (props: UseEditorInput): UseEditorOutput => {
     }
   }
 
+  const setTransformation = (transformation: { dx: number; dy: number; zoom: number }) =>
+    setState({ ...state, transformation })
+
   return {
     editorProps: { state, setState, nodes, onEditorUpdate, editorBoundingRect, config: props.config },
-    createNewNode
+    createNewNode,
+    setTransformation
   }
 }

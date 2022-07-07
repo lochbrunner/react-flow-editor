@@ -122,23 +122,6 @@ export const Editor: React.FC<EditorProps> = (props) => {
     }
   }
 
-  const onWheel = (e: React.WheelEvent<HTMLElement>) => {
-    if (e.ctrlKey) return
-    if (props.config.disableZoom) return
-    const pt = state.transformation
-    const zoomFactor = Math.pow(1.25, Math.sign(e.deltaY))
-    const zoom = pt.zoom * zoomFactor
-
-    const cx = e.clientX
-    const cy = e.clientY
-    // See https://github.com/lochbrunner/meliodraw/blob/master/Melio.Draw/SharpDX/OrthogonalCamera.cs#L116
-    const dy = cy * (pt.zoom - zoom) + pt.dy
-    const dx = cx * (pt.zoom - zoom) + pt.dx
-    const transformation = { dx, dy, zoom }
-
-    setState((state) => ({ ...state, transformation }))
-  }
-
   const onDragEnded = (e: React.MouseEvent<HTMLElement>) => {
     setCurrentAction(undefined)
     setState((state) => ({ ...state, workingItem: undefined }))
@@ -310,7 +293,6 @@ export const Editor: React.FC<EditorProps> = (props) => {
       ref={onEditorUpdate}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      onWheel={onWheel}
       onMouseLeave={onDragEnded}
       onMouseMove={onDrag}
       onMouseDown={onMouseGlobalDown}
