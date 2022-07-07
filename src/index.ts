@@ -1,4 +1,5 @@
 export { Editor } from "./NewEditor"
+export { useEditor } from "./useEditor"
 export { Endpoint } from "./Endpoint"
 export { MenuItem } from "./menu"
 export type {

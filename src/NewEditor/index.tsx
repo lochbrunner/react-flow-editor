@@ -16,18 +16,18 @@ import { Connections } from "./Connections"
 import { Node } from "./Node"
 import { adjust } from "../adjust"
 
-type EditorProps = {
+export type EditorProps = {
   config: Config
   nodes: NodeType[]
-  style?: React.CSSProperties
-  additionalClassName?: string
+  state: EditorState
+  setState: React.Dispatch<React.SetStateAction<EditorState>>
+  editorBoundingRect: DOMRect
+  onEditorUpdate: (element: Element) => void
 }
 
 export const Editor: React.FC<EditorProps> = (props) => {
-  const [state, setState] = useState<EditorState>(initialState(props.nodes))
+  const { state, setState, nodes, editorBoundingRect, onEditorUpdate } = props
   const [currentAction, setCurrentAction] = useState<CurrentAction>(undefined)
-  const [editorBoundingRect, setEditorBoundingRect] = useState<DOMRect>(undefined)
-  const [nodes, setNodes] = useState<NodeType[]>(props.nodes)
   const endpointCache = new Map<string, Vector2d>()
 
   const select = (type: ItemType | null, id: string | null) => {
@@ -45,19 +45,7 @@ export const Editor: React.FC<EditorProps> = (props) => {
     }
   }
 
-  const onEditorUpdate = (element: Element) => {
-    if (element === null) return
-    const rect = element.getBoundingClientRect() as DOMRect
-
-    if (editorBoundingRect === undefined || editorBoundingRect.x !== rect.x || editorBoundingRect.y !== rect.y) {
-      setEditorBoundingRect(rect)
-      setState((state) => state)
-    }
-  }
-
   const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-    // console.log(`Key down: ${e.keyCode}`);
-
     const { selection } = state
     if (e.keyCode === KEY_CODE_DELETE) {
       if (selection) {
@@ -319,7 +307,6 @@ export const Editor: React.FC<EditorProps> = (props) => {
 
   return (
     <div
-      style={props.style}
       ref={onEditorUpdate}
       tabIndex={0}
       onKeyDown={onKeyDown}
@@ -328,7 +315,7 @@ export const Editor: React.FC<EditorProps> = (props) => {
       onMouseMove={onDrag}
       onMouseDown={onMouseGlobalDown}
       onMouseUp={onDragEnded}
-      className={classNames("react-flow-editor", props.additionalClassName || [])}
+      className="react-flow-editor"
     >
       <Grid componentSize={state.componentSize} grid={props.config.grid} />
       <Connections state={state} setState={setState} nodes={nodes} select={select} config={props.config} />

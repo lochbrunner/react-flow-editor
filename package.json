@@ -20,7 +20,6 @@
     "lint": "tslint ./{src}/**/*.{ts,tsx}",
     "prettier": "./node_modules/.bin/prettier . --write",
     "refresh-all": "npm run refresh-redux && npm run refresh-simple",
-    "refresh-redux": " rm -rf ./example/redux/node_modules/react-flow-editor/dist && cp -r ./dist ./example/redux/node_modules/react-flow-editor/dist",
     "refresh-simple": " rm -rf ./example/simple/node_modules/@kseniass/react-flow-editor/dist && cp -r ./dist ./example/simple/node_modules/@kseniass/react-flow-editor/dist"
   },
   "dependencies": {
