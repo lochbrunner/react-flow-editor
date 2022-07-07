@@ -347,6 +347,7 @@ export const Editor: React.FC<EditorProps> = (props) => {
             onCreateConnectionEnded={onCreateConnectionEnded}
             setConnectionEndpoint={setConnectionEndpoint}
             dropArea={props.config.dragHandler || "header"}
+            key={node.id}
           />
         ))}
       </div>

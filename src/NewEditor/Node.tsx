@@ -12,16 +12,11 @@ type NodeProps = {
   node: NodeType
   onDragStarted: (id: string, e: React.MouseEvent<HTMLElement>) => void
   toggleExpandNode: (id: string) => void
-  // Config["resolver"]
   resolver: (node: NodeType) => JSX.Element
-
   onCreateConnectionStarted: (endpoint: IEndpoint, e: React.MouseEvent<HTMLElement>) => void
   onCreateConnectionEnded: (endpoint: IEndpoint, e: React.MouseEvent<HTMLElement>) => void
   setConnectionEndpoint: (conn: IEndpoint, element: Element) => void
-
-  //const dir = this.props.config.direction || "we"
   dir: "ew" | "we"
-  // const dropArea = this.props.config.dragHandler || "header"
   dropArea: "header" | "body"
 }
 
@@ -161,7 +156,6 @@ export const Node: React.FC<NodeProps> = (props) => {
   return (
     <div
       onClick={() => props.select(ItemType.node, props.node.id)}
-      key={props.node.id}
       style={nodeStyle(nodeState.pos)}
       onMouseDown={props.dropArea === "body" ? (e) => props.onDragStarted(props.node.id, e) : undefined}
       onDoubleClick={props.dropArea === "body" ? () => props.toggleExpandNode(props.node.id) : undefined}
